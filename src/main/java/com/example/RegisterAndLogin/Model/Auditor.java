@@ -3,7 +3,7 @@ package com.example.RegisterAndLogin.Model;
 import com.example.RegisterAndLogin.Enum.Role;
 import jakarta.persistence.*;
 import lombok.Data;
-
+//comment
 @Entity
 @Data
 @Table(name = "auditors")
