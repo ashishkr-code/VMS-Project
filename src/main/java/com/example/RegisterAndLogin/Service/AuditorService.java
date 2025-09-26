@@ -1,10 +1,11 @@
 package com.example.RegisterAndLogin.Service;
 
 import com.example.RegisterAndLogin.Dto.LoginRequest;
+import com.example.RegisterAndLogin.Dto.LoginResponse;
 import com.example.RegisterAndLogin.Dto.RegisterRequest;
-import org.springframework.http.ResponseEntity;
+import com.example.RegisterAndLogin.Dto.RegisterResponse;
 
 public interface AuditorService {
-    ResponseEntity<?> register(RegisterRequest request);
-    ResponseEntity<?> login(LoginRequest request);
+    RegisterResponse register(RegisterRequest request);
+    LoginResponse login(LoginRequest request);
 }
