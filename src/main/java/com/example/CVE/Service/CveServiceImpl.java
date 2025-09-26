@@ -19,7 +19,7 @@ public class CveServiceImpl implements CveService {
 
     @Autowired
     private ModelMapper modelMapper;
-
+//comment
     @Override
     public CveResponse createCve(CveRequest cveRequestDto) {
         CveModel cve = modelMapper.map(cveRequestDto, CveModel.class);
