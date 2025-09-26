@@ -42,7 +42,6 @@ public class CveServiceImpl implements CveService {
         CveModel existingCve = cveRepository.findById(Integer.valueOf(cveId))
                 .orElseThrow(() -> new RuntimeException("CVE not found with ID: " + cveId));
 
-        existingCve.setVersion(cveRequestDto.getVersion());
         existingCve.setPackageName(cveRequestDto.getPackageName());
         existingCve.setDescription(cveRequestDto.getDescription());
 
