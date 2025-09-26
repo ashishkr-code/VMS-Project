@@ -16,7 +16,7 @@ public class AuditorServiceImpl implements AuditorService {
     @Autowired
     private ModelMapper modelMapper;
 
-    @Override
+
     public RegisterResponse register(RegisterRequest request) {
         if (request.getUsername() == null || request.getEmail() == null ||
                 request.getPassword() == null || request.getConfirmPassword() == null || request.getRole() == null) {
@@ -38,7 +38,7 @@ public class AuditorServiceImpl implements AuditorService {
         return response;
     }
 
-    @Override
+
     public LoginResponse login(LoginRequest request) {
         Auditor auditor = auditorRepository
                 .findByUsernameOrEmail(request.getUsernameOrEmail(), request.getUsernameOrEmail())
@@ -55,5 +55,16 @@ public class AuditorServiceImpl implements AuditorService {
         LoginResponse response = modelMapper.map(auditor, LoginResponse.class);
         response.setMessage("Login successful");
         return response;
+    }
+
+    @Override
+    public String deleteAuditor(Long id) {
+        if (!auditorRepository.existsById(id)){
+            return "Auditor not found by id: "+ id;
+        }
+
+        auditorRepository.deleteById(id);
+        return "Auditor deleted succesfully :" + id;
+
     }
 }

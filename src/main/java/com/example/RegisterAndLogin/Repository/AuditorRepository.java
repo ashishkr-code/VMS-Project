@@ -7,4 +7,7 @@ import java.util.Optional;
 
 public interface AuditorRepository extends JpaRepository<Auditor, Long> {
     Optional<Auditor> findByUsernameOrEmail(String username, String email);
+
+
+
 }

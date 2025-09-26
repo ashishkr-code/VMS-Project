@@ -8,4 +8,5 @@ import com.example.RegisterAndLogin.Dto.RegisterResponse;
 public interface AuditorService {
     RegisterResponse register(RegisterRequest request);
     LoginResponse login(LoginRequest request);
+    String deleteAuditor(Long id);
 }

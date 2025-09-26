@@ -4,6 +4,7 @@ import com.example.RegisterAndLogin.Dto.LoginRequest;
 import com.example.RegisterAndLogin.Dto.LoginResponse;
 import com.example.RegisterAndLogin.Dto.RegisterRequest;
 import com.example.RegisterAndLogin.Dto.RegisterResponse;
+
 import com.example.RegisterAndLogin.Service.AuditorService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,5 +27,10 @@ public class AuditorController {
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
         return auditorService.login(request);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteAuditor(@PathVariable Long id){
+        return auditorService.deleteAuditor(id);
     }
 }
