@@ -1,9 +1,12 @@
-package com.example.CVE.Repository;
+package com.example.vms.Repository;
 
-import com.example.CVE.Model.CveModel;
+import com.example.vms.Model.CveModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface CveRepository extends JpaRepository<CveModel, Integer> {
+    Optional<CveModel> findByCveId(String cveId);
 }

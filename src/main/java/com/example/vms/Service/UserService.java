@@ -1,6 +1,6 @@
-package com.example.CVE.Service;
+package com.example.vms.Service;
 
-import com.example.CVE.Dto.CveResponse;
+import com.example.vms.Dto.CveResponse;
 import java.util.List;
 
 public interface UserService {

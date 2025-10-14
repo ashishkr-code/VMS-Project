@@ -1,4 +1,4 @@
-package com.example.CVE.Configuration;
+package com.example.vms.Configuration;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;

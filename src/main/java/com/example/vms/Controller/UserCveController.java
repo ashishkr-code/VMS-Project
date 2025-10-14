@@ -1,7 +1,8 @@
-package com.example.CVE.Controller;
+package com.example.vms.Controller;
 
-import com.example.CVE.Dto.CveResponse;
-import com.example.CVE.Service.UserService; // UserService ko import karein
+import com.example.vms.Dto.CveResponse;
+import com.example.vms.Service.UserService; // UserService ko import karein
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +11,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/user/cves")
-public class UserController {
+@Tag(name = "User", description = "Endpoints for user can see cves")
+public class UserCveController {
 
     @Autowired
     private UserService userService;
