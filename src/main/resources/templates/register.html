@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .registration-container {
+            background-color: #34495e;
+            padding: 30px 40px;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .registration-container h2 {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1abc9c;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .global-error {
+            color: #ff6b6b;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #ecf0f1;
+        }
+
+        .form-group input {
+            width: 95%;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            font-size: 1em;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #1abc9c;
+            outline: none;
+        }
+
+        .form-group input::placeholder {
+            color: #95a5a6;
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .register-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #1abc9c, #16a085);
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 0 10px rgba(26, 188, 156, 0.4);
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .register-btn:hover {
+            box-shadow: 0 0 15px rgba(26, 188, 156, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .login-link a {
+            color: #1abc9c;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        #adminSpecificFields {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 40px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #1abc9c;
+            user-select: none;
+        }
+
+        .strength-indicator {
+            font-size: 0.8em;
+            margin-top: 5px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .strength-bar {
+            height: 6px;
+            border-radius: 4px;
+            background-color: #7f8c8d;
+            margin-top: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="registration-container">
+    <h2>User Registration</h2>
+
+    <div th:if="${error}" th:text="${error}" class="global-error"></div>
+
+    <form th:action="@{/vms/register}" th:object="${RegisterRequest}" method="post">
+
+        <!-- Role selection -->
+        <div class="form-group">
+            <label>Role</label>
+            <div class="role-selection">
+                <label><input type="radio" th:field="*{role}" value="AUDITOR" onchange="toggleFormFields()" checked> Auditor</label>
+                <label><input type="radio" th:field="*{role}" value="ADMIN" onchange="toggleFormFields()"> Admin</label>
+            </div>
+        </div>
+
+        <!-- Company Code for Admin -->
+        <div id="adminSpecificFields">
+            <div class="form-group">
+                <label for="companyCode">Company Code</label>
+                <input type="text" id="companyCode" th:field="*{companyCode}" placeholder="Enter company-provided code">
+                <div th:if="${#fields.hasErrors('companyCode')}" th:errors="*{companyCode}" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" th:field="*{username}" placeholder="Enter username">
+            <div th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="error-message"></div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" th:field="*{email}" placeholder="Enter email">
+            <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-message"></div>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+            <label for="mobileno">Mobile Number</label>
+            <input type="text" id="mobileno" th:field="*{mobileno}" placeholder="Enter mobile number">
+            <div th:if="${#fields.hasErrors('mobileno')}" th:errors="*{mobileno}" class="error-message"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" th:field="*{password}" placeholder="Enter password" oninput="checkStrength(this.value)">
+            <span class="toggle-password" onclick="toggleVisibility('password')">Show</span>
+            <div class="strength-indicator" id="strengthIndicator">Strength: —</div>
+            <div class="strength-bar" id="strengthBar"></div>
+            <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error-message"></div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Re-enter password">
+            <span class="toggle-password" onclick="toggleVisibility('confirmPassword')">Show</span>
+            <div th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="error-message"></div>
+        </div>
+
+        <button type="submit" class="register-btn">Register</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a th:href="@{/login}">Login</a>
+    </div>
+</div>
+
+<script>
+    function toggleFormFields() {
+        const adminFields = document.getElementById('adminSpecificFields');
+        const isAdmin = document.querySelector('input[value="ADMIN"]').checked;
+        adminFields.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    function toggleVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.type = field.type === 'password' ? 'text' : 'password';
+    }
+
+    function checkStrength(password) {
+        const indicator = document.getElementById('strengthIndicator');
+        const bar = document.getElementById('strengthBar');
+        let strength = 'Weak';
+        let color = '#e74c3c';
+
+        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+        const mediumRegex = /^(?=.*[a-z])(?=.*\d).{6,}$/;
+
+        if (strongRegex.test(password)) {
+            strength = 'Strong';
+            color = '#2ecc71';
+        } else if (mediumRegex.test(password)) {
+            strength = 'Medium';
+            color = '#f1c40f';
+        }
+
+        indicator.textContent = `Strength: ${strength}`;
+        indicator.style.color = color;
+        bar.style.backgroundColor = color;
+    }
+
+    document.addEventListener('DOMContentLoaded', toggleFormFields);
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CveRequest {
 
+
     @NotBlank(message = "Package name is required")
     private String packageName;
     @NotBlank(message = "Description is required")
@@ -24,4 +25,9 @@ public class CveRequest {
     @NotNull(message = "Status is required")
     private CveStatus status;  // Enum: ACTIVE / INACTIVE
     private Version version;
+
+    public void setCveId(String cveId) {
+
+
+    }
 }

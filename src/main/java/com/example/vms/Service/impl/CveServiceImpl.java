@@ -2,6 +2,7 @@ package com.example.vms.Service.impl;
 
 import com.example.vms.Dto.CveRequest;
 import com.example.vms.Dto.CveResponse;
+import com.example.vms.Enum.CveStatus;
 import com.example.vms.Enum.Severity;
 import com.example.vms.Globalexception.CustomException;
 import com.example.vms.Model.CveModel;
@@ -22,11 +23,7 @@ public class CveServiceImpl implements CveService {
 
     @Autowired
     private CveRepository cveRepository;
-
-    @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     // CREATE
@@ -125,7 +122,6 @@ public class CveServiceImpl implements CveService {
     }
 
 
-
     // DELETE by numeric ID
     @Override
     public void deleteCve(String cveId) {
@@ -172,4 +168,39 @@ public class CveServiceImpl implements CveService {
         }
         return result;
     }
+
+    @Override
+    public List<CveResponse> getAllCvesByStatus(String status) {
+        CveStatus enumStatus = CveStatus.valueOf(status.toUpperCase());
+        List<CveModel> cves = cveRepository.findByStatus(enumStatus);
+
+        if (cves.isEmpty()) {
+            throw new CustomException.CveNotFoundException("No CVEs found with status: " + status);
+        }
+
+        return cves.stream()
+                .map(cve -> modelMapper.map(cve, CveResponse.class))
+                .toList();
+    }
+
+
+
+    // Delete CVE by numeric ID
+    @Override
+    public void deleteCveById(Integer id) {
+        CveModel cve = cveRepository.findById(id)
+                .orElseThrow(() -> new CustomException.CveNotFoundException("CVE not found with ID: " + id));
+        cveRepository.delete(cve);
+    }
+
+    // Get CVE by numeric ID
+    @Override
+    public CveResponse getCveById(Integer id) {
+        CveModel cve = cveRepository.findById(id)
+                .orElseThrow(() -> new CustomException.CveNotFoundException("CVE not found with ID: " + id));
+        return modelMapper.map(cve, CveResponse.class);
+    }
+
+
+
 }

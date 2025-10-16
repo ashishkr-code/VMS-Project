@@ -185,4 +185,83 @@ public class CveController {
         );
         return ResponseEntity.ok(response);
     }
+    // ✅ Get CVEs by Status
+    @Operation(
+            summary = "Get all CVEs by status",
+            description = "Fetches all CVEs that have the specified status."
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved CVEs with the given status"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "No CVEs found for the given status"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/status/{status}")
+    public ResponseEntity<ApiResponse<List<CveResponse>>> getAllCvesByStatus(@PathVariable String status) {
+        try {
+            List<CveResponse> cves = cveAdminService.getAllCvesByStatus(status);
+
+            if (cves == null || cves.isEmpty()) {
+                ApiResponse<List<CveResponse>> response = new ApiResponse<>(
+                        HttpStatus.NOT_FOUND.value(),
+                        "No CVEs found with status: " + status,
+                        null
+                );
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            ApiResponse<List<CveResponse>> response = new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "CVEs fetched successfully by status",
+                    cves
+            );
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            ApiResponse<List<CveResponse>> response = new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "An error occurred while fetching CVEs by status: " + e.getMessage(),
+                    null
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
+
+    // ✅ Get CVE by ID
+    @Operation(summary = "Get CVE by numeric ID", description = "Fetches a single CVE record using its database ID.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved the CVE"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "CVE not found for the given ID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/id/{id}")
+    public ResponseEntity<ApiResponse<CveResponse>> getCveById(@PathVariable Integer id) {
+        CveResponse cve = cveAdminService.getCveById(id);
+        ApiResponse<CveResponse> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "CVE fetched successfully by ID",
+                cve
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+    // ✅ Delete CVE by ID
+    @Operation(summary = "Delete CVE by numeric ID", description = "Deletes a CVE record from the database using its ID.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "CVE deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "CVE not found for the given ID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @DeleteMapping("/id/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteCveById(@PathVariable Integer id) {
+        cveAdminService.deleteCveById(id);
+        ApiResponse<String> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "CVE deleted successfully",
+                "CVE with ID " + id + " deleted successfully."
+        );
+        return ResponseEntity.ok(response);
+    }
 }

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditor Dashboard - CVE Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* General Body Styles */
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+        }
+
+        /* --- Sidebar Styles --- */
+        .sidebar {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 20px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar ul li a {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+        }
+
+        .sidebar ul li a i {
+            margin-right: 15px;
+            width: 20px;
+        }
+
+        /* Style for the active/current page link */
+        .sidebar ul li.active {
+            background-color: #3498db;
+        }
+
+        .sidebar ul li.active a {
+            color: white;
+        }
+
+        .sidebar ul li:hover:not(.active) {
+            background-color: #34495e;
+        }
+        .sidebar ul li:hover a {
+            color: white;
+        }
+
+        /* --- Main Content Styles --- */
+        .main-content {
+            margin-left: 240px; /* Same as sidebar width */
+            width: calc(100% - 240px);
+            padding: 0;
+        }
+
+        .header {
+            background-color: #34495e;
+            color: white;
+            padding: 18px 30px;
+            font-size: 1.4em;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* Welcome Message from your prompt */
+        .welcome-message h2, .welcome-message p {
+            margin: 0 0 20px 0;
+        }
+
+        /* Summary Cards */
+        .cards-container {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+            flex-grow: 1;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .card .number {
+            font-size: 2.8em;
+            font-weight: 500;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .card .label {
+            font-size: 1em;
+            color: #6c757d;
+            margin: 5px 0 0 0;
+        }
+
+        /* Table Container Styles */
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+        }
+
+        /* Table Toolbar (Search Bar) */
+        .table-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+            font-size: 0.95em;
+        }
+
+        /* CVE Table Styles */
+        .cve-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cve-table th, .cve-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .cve-table thead th {
+            background-color: #f8f9fa;
+            color: #888; /* Greyed out header text */
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .cve-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .cve-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <h2>CVE Dashboard</h2>
+    <ul>
+        <li class="active">
+            <a href="#"><i class="fas fa-home"></i> Home</a>
+        </li>
+        <li>
+            <a href="#"><i class="fas fa-info-circle"></i> About</a>
+        </li>
+        <li>
+            <a href="#"><i class="fas fa-envelope"></i> Contact Us</a>
+        </li>
+        <li>
+            <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+    </ul>
+</nav>
+
+<div class="main-content">
+    <header class="header">
+        User Dashboard - CVE Viewer
+    </header>
+
+    <main class="content">
+        <div class="welcome-message">
+            <h2>Auditor Dashboard</h2>
+            <p>Welcome, Auditor!</p>
+        </div>
+
+        <div class="cards-container">
+            <div class="card">
+                <p class="number">3</p>
+                <p class="label">Total CVEs</p>
+            </div>
+            <div class="card">
+                <p class="number">3</p>
+                <p class="label">Recent CVEs (Last 7 Days)</p>
+            </div>
+            <div class="card">
+                <p class="number">3</p>
+                <p class="label">Unique Packages</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-toolbar">
+                <input type="text" class="search-bar" placeholder="Search CVEs by ID, Package, or Description...">
+            </div>
+
+            <table class="cve-table">
+                <thead>
+                <tr>
+                    <th>CVE ID</th>
+                    <th>Version</th>
+                    <th>Package</th>
+                    <th>Description</th>
+                    <th>Product ID</th>
+                    <th>Created At</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>CVE-2025-1234</td>
+                    <td>1.0.2</td>
+                    <td>OpenSSL</td>
+                    <td>Buffer overflow in SSL handshake.</td>
+                    <td>PRD-101</td>
+                    <td>2025-09-23</td>
+                </tr>
+                <tr>
+                    <td>CVE-2025-5678</td>
+                    <td>3.2.1</td>
+                    <td>Apache</td>
+                    <td>Privilege escalation vulnerability.</td>
+                    <td>PRD-202</td>
+                    <td>2025-09-20</td>
+                </tr>
+                <tr>
+                    <td>CVE-2025-9876</td>
+                    <td>2.5.0</td>
+                    <td>Nginx</td>
+                    <td>Denial of service via HTTP/2.</td>
+                    <td>PRD-303</td>
+                    <td>2025-09-22</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
