@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuditorService1 {
+public class Authentic {
 
     @Autowired
     private AuditorRepository auditorRepository;

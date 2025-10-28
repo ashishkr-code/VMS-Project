@@ -18,7 +18,7 @@ public class Register {
     @Autowired
     private AuditorService auditorService;
 
-    @GetMapping("/register1")
+    @GetMapping("/register")
     public String showRegisterForm(Model model) {
         model.addAttribute("RegisterRequest", new RegisterRequest());
         return "register"; // register.html from templates folder

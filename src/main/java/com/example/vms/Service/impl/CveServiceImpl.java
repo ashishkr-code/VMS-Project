@@ -23,7 +23,9 @@ public class CveServiceImpl implements CveService {
 
     @Autowired
     private CveRepository cveRepository;
+    @Autowired
     private ProductRepository productRepository;
+    @Autowired
     private ModelMapper modelMapper;
 
     // CREATE
@@ -200,7 +202,4 @@ public class CveServiceImpl implements CveService {
                 .orElseThrow(() -> new CustomException.CveNotFoundException("CVE not found with ID: " + id));
         return modelMapper.map(cve, CveResponse.class);
     }
-
-
-
 }
