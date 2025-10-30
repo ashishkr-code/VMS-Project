@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Responsive -->
+    <title>User Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg-start: #0f2027;
+            --bg-mid: #203a43;
+            --bg-end: #2c5364;
+            --card-bg: #34495e;
+            --accent: #1abc9c;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --muted: #95a5a6;
+            --input-bg: #ecf0f1;
+            --text-dark: #2c3e50;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+            color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .registration-container {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+            width: 100%;
+            max-width: 620px;
+            transition: all 0.25s ease;
+            box-sizing: border-box;
+        }
+
+        .registration-container h2 {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: var(--accent);
+        }
+
+        .global-error {
+            color: var(--danger);
+            text-align: center;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .form-row {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.92em;
+            color: #ecf0f1;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-dark);
+            font-size: 1em;
+            border: 2px solid transparent;
+            transition: border-color 0.22s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        fieldset.role-group {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .register-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--accent), #16a085);
+            color: white;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 0 10px rgba(26, 188, 156, 0.35);
+            transition: box-shadow 0.2s ease, transform 0.15s ease;
+        }
+
+        .register-btn:hover {
+            box-shadow: 0 0 14px rgba(26, 188, 156, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 0.9em;
+        }
+
+        .login-link a {
+            color: var(--accent);
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        #adminSpecificFields {
+            display: none;
+            animation: fadeIn 0.28s ease-in-out;
+        }
+
+        button.toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 36px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: var(--accent);
+            user-select: none;
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+        }
+
+        .strength-indicator {
+            font-size: 0.85em;
+            margin-top: 6px;
+            font-weight: 600;
+            transition: color 0.18s ease;
+        }
+
+        .strength-meter {
+            height: 8px;
+            border-radius: 6px;
+            background-color: #7f8c8d;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .strength-meter > .bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.28s ease, background-color 0.18s ease;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85em;
+            margin-top: 6px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 420px) {
+            .registration-container {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="registration-container">
+    <h2>User Registration</h2>
+
+    <!-- global server-side error -->
+    <div th:if="${error}" th:text="${error}" class="global-error" role="alert" aria-live="assertive"></div>
+
+    <form th:action="@{/vms/register}" th:object="${RegisterRequest}" method="post" id="registerForm" novalidate>
+
+        <!-- Role selection -->
+        <fieldset class="form-row role-group" aria-labelledby="roleLegend">
+            <legend id="roleLegend" style="color: #ecf0f1; font-weight: 600; margin-bottom: 8px;">Role</legend>
+            <div class="role-selection" role="radiogroup" aria-describedby="roleHint">
+                <label for="roleAuditor">
+                    <input id="roleAuditor" type="radio" th:field="*{role}" value="AUDITOR" onchange="toggleFormFields()" checked>
+                    Auditor
+                </label>
+                <label for="roleAdmin">
+                    <input id="roleAdmin" type="radio" th:field="*{role}" value="ADMIN" onchange="toggleFormFields()">
+                    Admin
+                </label>
+            </div>
+            <div id="roleHint" style="font-size:0.85em; color:var(--muted); margin-top:6px;">Select the appropriate role. Admin needs company code.</div>
+        </fieldset>
+
+        <!-- Company Code for Admin -->
+        <div id="adminSpecificFields">
+            <div class="form-row">
+                <label for="companyCode">Company Code</label>
+                <input type="text" id="companyCode" th:field="*{companyCode}" placeholder="Enter company-provided code" autocomplete="organization" aria-describedby="companyHelp">
+                <div id="companyHelp" class="error-message" th:if="${#fields.hasErrors('companyCode')}" th:errors="*{companyCode}"></div>
+            </div>
+        </div>
+
+        <!-- Username -->
+        <div class="form-row">
+            <label for="username">Username</label>
+            <input type="text" id="username" th:field="*{username}" placeholder="Choose a username" required autocomplete="username" minlength="3" maxlength="50">
+            <div class="error-message" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" id="email" th:field="*{email}" placeholder="name@example.com" required autocomplete="email">
+            <div class="error-message" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-row">
+            <label for="mobileno">Mobile Number</label>
+            <input type="tel" id="mobileno" th:field="*{mobileno}" placeholder="e.g. 9876543210" inputmode="numeric" pattern="\d{7,15}" maxlength="15" required autocomplete="tel">
+            <div class="error-message" th:if="${#fields.hasErrors('mobileno')}" th:errors="*{mobileno}"></div>
+            <div id="mobileHint" style="font-size:0.82em; color:var(--muted); margin-top:6px;">Include country code if applicable (no plus sign).</div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-row" style="margin-bottom: 6px;">
+            <label for="password">Password</label>
+            <input type="password" id="password" th:field="*{password}" placeholder="At least 8 characters, mixed case, number & symbol" oninput="checkStrength(this.value)" aria-describedby="strengthIndicator" required autocomplete="new-password" minlength="8">
+            <button type="button" class="toggle-password" id="togglePassword" aria-controls="password" aria-pressed="false" onclick="toggleVisibility('password', this)">Show</button>
+            <div id="strengthIndicator" class="strength-indicator" aria-live="polite">Strength: —</div>
+            <div class="strength-meter" aria-hidden="true">
+                <div id="strengthBar" class="bar" style="background-color:#7f8c8d; width:0%"></div>
+            </div>
+            <div class="error-message" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-row">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Re-enter password" required autocomplete="new-password" minlength="8">
+            <button type="button" class="toggle-password" id="toggleConfirm" aria-controls="confirmPassword" aria-pressed="false" onclick="toggleVisibility('confirmPassword', this)">Show</button>
+            <div id="confirmError" class="error-message" style="display:none;" aria-live="assertive">Passwords do not match.</div>
+            <div class="error-message" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+        </div>
+
+        <button type="submit" class="register-btn">Register</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a th:href="@{/login}">Login</a>
+    </div>
+</div>
+
+<script>
+    // Show/hide admin fields based on role selection
+    function toggleFormFields() {
+        const adminFields = document.getElementById('adminSpecificFields');
+        const isAdmin = document.getElementById('roleAdmin').checked;
+        adminFields.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    // Toggle password visibility and update button text & aria-pressed
+    function toggleVisibility(fieldId, btn) {
+        const field = document.getElementById(fieldId);
+        const isHidden = field.type === 'password';
+        field.type = isHidden ? 'text' : 'password';
+        if (btn) {
+            btn.textContent = isHidden ? 'Hide' : 'Show';
+            btn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+        }
+    }
+
+    // Password strength check (simple, runs client-side for UX)
+    function checkStrength(password) {
+        const indicator = document.getElementById('strengthIndicator');
+        const bar = document.getElementById('strengthBar');
+
+        let score = 0;
+        if (password.length >= 8) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/\d/.test(password)) score += 1;
+        if (/[@$!%*?&]/.test(password)) score += 1;
+
+        let strength = 'Very weak';
+        let color = '#e74c3c';
+        let width = 20;
+
+        if (score <= 1) {
+            strength = 'Very weak'; color = '#e74c3c'; width = 16;
+        } else if (score === 2) {
+            strength = 'Weak'; color = '#e67e22'; width = 36;
+        } else if (score === 3) {
+            strength = 'Medium'; color = '#f1c40f'; width = 60;
+        } else if (score === 4) {
+            strength = 'Strong'; color = '#2ecc71'; width = 80;
+        } else if (score === 5) {
+            strength = 'Very strong'; color = '#27ae60'; width = 100;
+        }
+
+        indicator.textContent = `Strength: ${strength}`;
+        indicator.style.color = color;
+        bar.style.backgroundColor = color;
+        bar.style.width = width + '%';
+    }
+
+    // Validate before submit: ensure passwords match and basic patterns
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        const pw = document.getElementById('password').value || '';
+        const cpw = document.getElementById('confirmPassword').value || '';
+        const confirmError = document.getElementById('confirmError');
+
+        // Reset
+        confirmError.style.display = 'none';
+
+        if (pw !== cpw) {
+            e.preventDefault();
+            confirmError.style.display = 'block';
+            confirmError.textContent = 'Passwords do not match.';
+            document.getElementById('confirmPassword').focus();
+            return false;
+        }
+
+        // Extra client-side mobile format check (simple)
+        const mobile = document.getElementById('mobileno').value || '';
+        const mobilePattern = /^\d{7,15}$/;
+        if (mobile && !mobilePattern.test(mobile)) {
+            e.preventDefault();
+            const mobileHelp = document.getElementById('mobileHint');
+            mobileHelp.textContent = 'Enter a valid mobile number (7–15 digits).';
+            mobileHelp.style.color = '#e74c3c';
+            document.getElementById('mobileno').focus();
+            return false;
+        }
+
+        // Let server-side validation handle other checks
+    });
+
+    // Initialize UI based on role selection
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleFormFields();
+        // Set initial strength if password prefilled by browser (edge case)
+        const pwd = document.getElementById('password');
+        if (pwd && pwd.value) checkStrength(pwd.value);
+    });
+</script>
+</body>
+</html>

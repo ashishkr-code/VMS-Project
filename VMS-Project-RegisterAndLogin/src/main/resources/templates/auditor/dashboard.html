@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Auditor Dashboard - CVE Review</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <style>
+        :root { --sidebar-width:260px; --accent:#007bff; }
+        body { background:#f5f7fa; font-family:"Segoe UI",sans-serif; transition:.3s; margin:0; padding:0; overflow-x:hidden; }
+        body.dark { background:#0f1720; color:#e6eef6; }
+        header { background:#1e2a38; color:white; padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center; }
+        .hamburger { background:none; border:none; color:white; font-size:1.6rem; }
+        .toggle-dark { background:var(--accent); border:none; border-radius:8px; padding:6px 10px; color:white; font-size:1rem; }
+        .sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1050; display:none; }
+        .sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-width); background:#1e2a38; color:white; transform:translateX(-100%); transition:.3s; z-index:1060; padding:1rem; display:flex; flex-direction:column; }
+        .sidebar.open { transform:translateX(0); }
+        .nav-link { color:white; display:flex; align-items:center; gap:.5rem; padding:.6rem; border-radius:8px; margin-bottom:.3rem; text-decoration:none; }
+        .nav-link.active, .nav-link:hover { background:var(--accent); color:white; }
+        .content { transition:margin-left .3s; }
+        .card { border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.05); background:white; padding:1.25rem; }
+        body.dark .card { background:#111315; color:white; box-shadow:none; }
+        table.table { margin-top:1rem; }
+        .d-none { display:none!important; }
+        .filter-bar input, .filter-bar select { max-width:200px; margin-right:10px; }
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside id="sidebar" class="sidebar">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">CVE Auditor</h4>
+            <small class="text-light">Auditor Panel</small>
+        </div>
+        <button class="btn btn-sm btn-outline-light" onclick="closeSidebar()">&times;</button>
+    </div>
+
+    <nav>
+        <a class="nav-link active" id="side-dashboard" href="#" onclick="showSection('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" id="side-cve" href="#" onclick="showSection('cve')"><i class="bi bi-bug"></i> CVEs</a>
+        <a class="nav-link" id="side-product" href="#" onclick="showSection('product')"><i class="bi bi-box-seam"></i> Products</a>
+        <a class="nav-link" id="side-profile" href="#" onclick="showSection('profile')"><i class="bi bi-person-circle"></i> Profile</a>
+        <a class="nav-link text-danger" th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+
+    <div style="margin-top:auto; font-size:.85rem; color:rgba(255,255,255,0.7);">
+        <hr>
+        Logged in as <strong>Auditor</strong><br>
+        <small>VMS • v1</small>
+    </div>
+</aside>
+
+<!-- HEADER -->
+<header>
+    <div class="d-flex align-items-center gap-2">
+        <button class="hamburger" onclick="openSidebar()"><i class="bi bi-list"></i></button>
+        <div>
+            <h2 class="mb-0">Auditor Dashboard</h2>
+            <small style="color:rgba(255,255,255,0.8)">Vulnerability Review</small>
+        </div>
+    </div>
+    <button class="toggle-dark" onclick="toggleDarkMode()"><span id="themeIcon">🌙</span></button>
+</header>
+
+<!-- CONTENT -->
+<main class="content container py-4">
+
+    <!-- DASHBOARD -->
+    <div id="dashboardSection">
+        <div class="card text-center">
+            <h5>System Overview</h5>
+            <div class="row mt-3">
+                <div class="col-sm-4"><strong>Total CVEs:</strong> <span th:text="${totalCves}">0</span></div>
+                <div class="col-sm-4"><strong>Active CVEs:</strong> <span th:text="${activeCves}">0</span></div>
+                <div class="col-sm-4"><strong>Products:</strong> <span th:text="${totalProducts}">0</span></div>
+            </div>
+        </div>
+
+        <div class="row mt-3 g-3">
+            <div class="col-md-4"><div class="card"><h6>Severity Distribution</h6><canvas id="severityChart"></canvas></div></div>
+            <div class="col-md-4"><div class="card"><h6>Status Distribution</h6><canvas id="statusChart"></canvas></div></div>
+            <div class="col-md-4"><div class="card"><h6>Product-wise CVE Count</h6><canvas id="productChart"></canvas></div></div>
+        </div>
+    </div>
+
+    <!-- CVEs -->
+    <div id="cveSection" class="d-none">
+        <div class="card">
+            <h5>Reviewed CVEs</h5>
+
+            <!--  Filters -->
+            <div class="filter-bar d-flex flex-wrap align-items-center mb-3">
+                <input type="text" id="searchCveInput" class="form-control" placeholder="Search CVE or package...">
+                <select id="severityFilter" class="form-select">
+                    <option value="">All Severities</option>
+                    <option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option>
+                </select>
+                <select id="statusFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option>ACTIVE</option><option>INACTIVE</option>
+                </select>
+                <input type="date" id="fromDate" class="form-control" placeholder="From">
+                <input type="date" id="toDate" class="form-control" placeholder="To">
+                <button class="btn btn-primary" onclick="filterCves()">Filter</button>
+                <button class="btn btn-secondary ms-2" onclick="resetCveFilters()">Reset</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle" id="cveTable">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>CVE ID</th><th>Package</th><th>Severity</th><th>Status</th>
+                        <th>Version</th><th>Product</th><th>Reviewed On</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="cve : ${cveList}">
+                        <td th:text="${cve.cveId}">CVE-XXX</td>
+                        <td th:text="${cve.packageName}">pkg</td>
+                        <td>
+    <span th:text="${cve.severity}"
+          th:classappend="${cve.severity.name() == 'LOW' ? 'badge bg-success' :
+                           (cve.severity.name() == 'MEDIUM' ? 'badge bg-warning text-dark' :
+                           (cve.severity.name() == 'HIGH' ? 'badge bg-danger' :
+                           (cve.severity.name() == 'CRITICAL' ? 'badge bg-dark' : 'badge bg-secondary')))}">
+        MEDIUM
+    </span>
+                        </td>
+
+                        <td>
+    <span th:text="${cve.status}"
+          th:classappend="${cve.status.name() == 'ACTIVE' ? 'badge bg-success' : 'badge bg-danger'}">
+        ACTIVE
+    </span>
+                        </td>
+
+                        <td th:text="${cve.version != null ? cve.version.versionstart + '-' + cve.version.versionend : 'N/A'}">5.0.0 - 5.3.8</td>
+                        <td th:text="${cve.product != null ? cve.product.productId : 'N/A'}">PRD-001</td>
+                        <td th:text="${#temporals.format(cve.createdAt,'yyyy-MM-dd')}">2025-10-09</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="productSection" class="d-none">
+        <div class="card">
+            <h5>Audited Products</h5>
+
+            <!--  Product Filters -->
+            <div class="filter-bar d-flex flex-wrap align-items-center mb-3">
+                <input type="text" id="searchProductInput" class="form-control" placeholder="Search Product or ID...">
+                <select id="productStatusFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option>PUBLISH</option><option>UNPUBLISH</option>
+
+                </select>
+                <button class="btn btn-primary" onclick="filterProducts()">Filter</button>
+                <button class="btn btn-secondary ms-2" onclick="resetProductFilters()">Reset</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle" id="productTable">
+                    <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Model</th><th>Status</th><th>Published</th></tr></thead>
+                    <tbody>
+                    <tr th:each="p : ${productList}">
+                        <td th:text="${p.productId}">PRD-001</td>
+                        <td th:text="${p.name}">Product</td>
+                        <td th:text="${p.modelno}">M-001</td>
+                        <td th:text="${p.status}">PUBLISH</td>
+                        <td th:text="${#temporals.format(p.publishAt, 'yyyy-MM-dd')}">2025-01-01</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="profileSection" class="d-none">
+            <h4 th:text="${auditorName}">Ravi Sharma</h4>
+            <p class="text-muted">Security Auditor (<span th:text="${auditorRole}">ROLE_AUDITOR</span>)</p>
+            <p><strong>Email:</strong> <span th:text="${auditorEmail}">ravi@company.com</span></p>
+            <p><strong>Joined:</strong> <span th:text="${#temporals.format(auditorCreatedAt, 'yyyy-MM-dd')}">2024-09-01</span></p>
+            <button class="btn btn-outline-primary">Request Role Update</button>
+        </div>
+    </div>
+
+
+</main>
+
+<script>
+    // Sidebar + Dark mode + Section toggle
+    function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebarOverlay').style.display='block';}
+    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').style.display='none';}
+    function toggleDarkMode(){document.body.classList.toggle('dark');const d=document.body.classList.contains('dark');document.getElementById('themeIcon').textContent=d?'☀️':'🌙';localStorage.setItem('auditor_theme',d?'dark':'light');}
+    if(localStorage.getItem('auditor_theme')==='dark'){document.body.classList.add('dark');document.getElementById('themeIcon').textContent='☀️';}
+    function showSection(id){['dashboard','cve','product','profile'].forEach(s=>{document.getElementById(s+'Section').classList.add('d-none');document.getElementById('side-'+s).classList.remove('active');});document.getElementById(id+'Section').classList.remove('d-none');document.getElementById('side-'+id).classList.add('active');closeSidebar();}
+
+    //  CVE Filters
+    function filterCves(){
+      const search=document.getElementById("searchCveInput").value.toLowerCase();
+      const sev=document.getElementById("severityFilter").value;
+      const stat=document.getElementById("statusFilter").value;
+      const from=document.getElementById("fromDate").value;
+      const to=document.getElementById("toDate").value;
+      const rows=document.querySelectorAll("#cveTable tbody tr");
+      rows.forEach(r=>{
+        const t=r.innerText.toLowerCase();
+        const date=r.cells[6].innerText.trim();
+        let ok=true;
+        if(search && !t.includes(search)) ok=false;
+        if(sev && !r.cells[2].innerText.includes(sev)) ok=false;
+        if(stat && !r.cells[3].innerText.includes(stat)) ok=false;
+        if(from && date<from) ok=false;
+        if(to && date>to) ok=false;
+        r.style.display=ok?"":"none";
+      });
+    }
+    function resetCveFilters(){
+      document.getElementById("searchCveInput").value="";
+      document.getElementById("severityFilter").value="";
+      document.getElementById("statusFilter").value="";
+      document.getElementById("fromDate").value="";
+      document.getElementById("toDate").value="";
+      filterCves();
+    }
+
+    //  Product Filters
+    function filterProducts(){
+      const search=document.getElementById("searchProductInput").value.toLowerCase();
+      const stat=document.getElementById("productStatusFilter").value;
+      const rows=document.querySelectorAll("#productTable tbody tr");
+      rows.forEach(r=>{
+        const t=r.innerText.toLowerCase();
+        let ok=true;
+        if(search && !t.includes(search)) ok=false;
+        if(stat && !r.cells[3].innerText.includes(stat)) ok=false;
+        r.style.display=ok?"":"none";
+      });
+    }
+    function resetProductFilters(){
+      document.getElementById("searchProductInput").value="";
+      document.getElementById("productStatusFilter").value="";
+      filterProducts();
+    }
+
+    // Charts
+    document.addEventListener('DOMContentLoaded',()=>{
+      new Chart(document.getElementById('severityChart'),{type:'doughnut',data:{labels:['LOW','MEDIUM','HIGH','CRITICAL'],datasets:[{data:[3,8,5,2],backgroundColor:['#27ae60','#f39c12','#e67e22','#e74c3c']}]},options:{plugins:{legend:{position:'bottom'}}}});
+      new Chart(document.getElementById('statusChart'),{type:'pie',data:{labels:['ACTIVE','INACTIVE'],datasets:[{data:[10,6],backgroundColor:['#27ae60','#e74c3c']}]},options:{plugins:{legend:{position:'bottom'}}}});
+      new Chart(document.getElementById('productChart'),{type:'bar',data:{labels:['PRD-001','PRD-002','PRD-003'],datasets:[{label:'CVEs',data:[4,6,3],backgroundColor:'#007bff'}]},options:{plugins:{legend:{display:false}}}});
+    });
+</script>
+
+</body>
+</html>
