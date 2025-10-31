@@ -1,6 +1,7 @@
 package com.example.vms.UIController;
 
 import com.example.vms.Dto.RegisterRequest;
+import com.example.vms.Dto.RegisterResponse;
 import com.example.vms.Enum.Role;
 import com.example.vms.Service.AuditorService;
 import jakarta.validation.Valid;
@@ -18,52 +19,56 @@ public class Register {
     @Autowired
     private AuditorService auditorService;
 
-        @GetMapping({"/", "/home"})
-        public String landingPage() {
-            return "landingpage"; // file name = landing.html
-        }
-
-
+    @GetMapping({"/", "/home"})
+    public String landingPage() {
+        return "landingpage"; // landing.html
+    }
 
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
         model.addAttribute("RegisterRequest", new RegisterRequest());
-        return "register"; // register.html from templates folder
+        return "register"; // register.html
     }
 
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute("RegisterRequest") RegisterRequest registerRequest,
-                               BindingResult result,
-                               Model model,
-                               RedirectAttributes redirectAttributes) {
-        // Step 1: Check for validation errors
+    public String registerUser(
+            @Valid @ModelAttribute("RegisterRequest") RegisterRequest registerRequest,
+            BindingResult result,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
+        // ✅ Step 1: Validate form
         if (result.hasErrors()) {
             model.addAttribute("error", "Please correct the highlighted errors.");
             return "register";
         }
 
-        // Step 2: Password match check
+        // ✅ Step 2: Password match
         if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
             model.addAttribute("error", "Passwords do not match.");
             return "register";
         }
 
-        // Step 3: Company code check for Admin
+        // ✅ Step 3: Company code check
         if (registerRequest.getRole() == Role.ROLE_ADMIN &&
                 !"COMPANY2025".equals(registerRequest.getCompanyCode())) {
             model.addAttribute("error", "Invalid company code for Admin.");
             return "register";
         }
 
-        // Step 4: Register user
+        // ✅ Step 4: Register user (Auditor/Admin)
         try {
+            RegisterResponse saved;
             if (registerRequest.getRole() == Role.ROLE_ADMIN) {
-                auditorService.registerAdmin(registerRequest);
+                saved = auditorService.registerAdmin(registerRequest);
             } else {
-                auditorService.registerAuditor(registerRequest);
+                saved = auditorService.registerAuditor(registerRequest);
             }
 
-            redirectAttributes.addFlashAttribute("message", "Registration successful! Please check your email for verification.");
+            // ✅ Step 5: Redirect with message (email is already sent inside service)
+            redirectAttributes.addFlashAttribute("message",
+                    "Registration successful! Please check your email for verification.");
+
             return "redirect:/login";
 
         } catch (Exception e) {

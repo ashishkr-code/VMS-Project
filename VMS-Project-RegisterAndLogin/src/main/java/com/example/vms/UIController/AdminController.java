@@ -7,6 +7,7 @@ import com.example.vms.Enum.ProductStatus;
 import com.example.vms.Enum.Role;
 import com.example.vms.Enum.Severity;
 import com.example.vms.Model.Auditor;
+import com.example.vms.Service.AuditorService;
 import com.example.vms.UIService.AdminService;
 import com.example.vms.Repository.CveRepository;
 import jakarta.servlet.http.HttpSession;
@@ -28,26 +29,23 @@ public class AdminController {
     @Autowired
     private CveRepository cveRepository;
 
+    @Autowired
+    private AuditorService auditorService;
 
+    // ✅ Helper method for admin authentication
+    private boolean isAdmin(HttpSession session) {
+        Auditor user = (Auditor) session.getAttribute("loggedInAuditor");
+        return user != null && user.getRole() == Role.ROLE_ADMIN;
+    }
 
+    // ✅ Dashboard (Main Page)
     @GetMapping("/dashboard")
-    public String dashboard(Model model, HttpSession session) { // <-- (1) YAHAN 'HttpSession session' ADD KAREIN
-
-
-        // NAYA SECURITY CHECK BILKUL AUDITOR KI TARAH
+    public String dashboard(Model model, HttpSession session) {
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
 
         Auditor loggedInUser = (Auditor) session.getAttribute("loggedInAuditor");
-
-        // Check 1: Kya user logged-in hai?
-        if (loggedInUser == null) {
-            return "redirect:/login"; // Login nahi hai, wapas bhejo
-        }
-
-        // Check 2: Kya user ADMIN hai?
-        // (Yeh zaroori hai, kya pata Auditor /admin/dashboard kholne ki koshish kare)
-        if (loggedInUser.getRole() != Role.ROLE_ADMIN) {
-            return "redirect:/login"; // Admin nahi hai, wapas bhejo
-        }
 
         model.addAttribute("cveList", adminService.getAllCves());
         model.addAttribute("productList", adminService.getAllProducts());
@@ -56,8 +54,9 @@ public class AdminController {
         model.addAttribute("totalCves", adminService.getAllCves().size());
         model.addAttribute("activeCves", adminService.countByStatus(CveStatus.ACTIVE));
         model.addAttribute("patchedCves", adminService.countByStatus(CveStatus.INACTIVE));
+        model.addAttribute("totalUsers", adminService.getAllUser().size());
+        model.addAttribute("totalProducts", adminService.getAllProducts().size());
 
-        // Admin profile info (Ab session se le sakte hain)
         model.addAttribute("adminName", loggedInUser.getUsername());
         model.addAttribute("adminEmail", loggedInUser.getEmail());
         model.addAttribute("adminRole", loggedInUser.getRole());
@@ -65,7 +64,7 @@ public class AdminController {
 
         model.addAttribute("newCve", new CveRequest());
 
-        // Severity counts for charts (if you use them)
+        // Severity stats for chart visualization
         Map<String, Long> severityCountMap = new HashMap<>();
         for (Severity severity : Severity.values()) {
             long count = cveRepository.countBySeverity(severity);
@@ -76,18 +75,28 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    // -------------------
-    // CVE Endpoints
-    // -------------------
+    // -------------------------------
+    // ✅ CVE MANAGEMENT
+    // -------------------------------
     @PostMapping("/save-cve")
-    public String saveCve(@ModelAttribute("newCve") CveRequest request) {
-        adminService.saveCve(request);
+    public String saveCve(@ModelAttribute("newCve") CveRequest request, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.saveCve(request);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error saving CVE: " + e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/delete-cve/{id}")
-    public String deleteCve(@PathVariable Integer id) {
-        adminService.deleteCve(id);
+    public String deleteCve(@PathVariable Integer id, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.deleteCve(id);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 
@@ -95,36 +104,82 @@ public class AdminController {
     public String updateCve(@RequestParam Integer id,
                             @RequestParam String packageName,
                             @RequestParam String severity,
-                            @RequestParam CveStatus status) {
-        adminService.updateCve(id, packageName, severity, status);
+                            @RequestParam CveStatus status,
+                            HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.updateCve(id, packageName, severity, status);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error updating CVE: " + e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 
-    // -------------------
-    // Product Endpoints
-    // -------------------
-
-    // Save product (add)
+    // -------------------------------
+    // ✅ PRODUCT MANAGEMENT
+    // -------------------------------
     @PostMapping("/save-product")
-    public String saveProduct(@ModelAttribute ProductRequest req) {
-        // req should contain at least 'name' and 'status' (ProductStatus)
-        adminService.saveProduct(req);
+    public String saveProduct(@ModelAttribute ProductRequest req, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.saveProduct(req);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error saving product: " + e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 
-    // Update product (edit)
     @PostMapping("/update-product")
     public String updateProduct(@RequestParam("id") Long id,
                                 @RequestParam("name") String name,
-                                @RequestParam("status") ProductStatus status) {
-        adminService.updateProduct(id, name, status);
+                                @RequestParam("status") ProductStatus status,
+                                HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.updateProduct(id, name, status);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error updating product: " + e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 
-    // Delete product
     @GetMapping("/delete-product/{id}")
-    public String deleteProduct(@PathVariable Long id) {
-        adminService.deleteProduct(id);
+    public String deleteProduct(@PathVariable Long id, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.deleteProduct(id);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error deleting product: " + e.getMessage());
+        }
+        return "redirect:/admin/dashboard";
+    }
+
+    // -------------------------------
+    // ✅ USER MANAGEMENT (only edit/delete)
+    // -------------------------------
+    @GetMapping("/delete-user/{id}")
+    public String deleteUser(@PathVariable Long id, HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            auditorService.deleteAuditor(id);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error deleting user: " + e.getMessage());
+        }
+        return "redirect:/admin/dashboard";
+    }
+
+    @PostMapping("/update-user")
+    public String updateUser(@RequestParam("id") Long id,
+                             @RequestParam("username") String username,
+                             @RequestParam("mobileno") Long mobileno,
+                             @RequestParam("role") Role role,
+                             HttpSession session) {
+        if (!isAdmin(session)) return "redirect:/login";
+        try {
+            adminService.updateAuditor(id, username, mobileno, role);
+        } catch (Exception e) {
+            session.setAttribute("errorMsg", "Error updating user: " + e.getMessage());
+        }
         return "redirect:/admin/dashboard";
     }
 }

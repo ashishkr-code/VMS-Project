@@ -33,8 +33,16 @@ public class LoginController {
             return "redirect:/login";
         }
 
+        // ✅ Check if user is verified
+        if (!user.isVerfied()) {
+            redirectAttributes.addFlashAttribute("message", "⚠️ Please verify your account before logging in.");
+            return "redirect:/login";
+        }
+
+        // ✅ Save logged in user to session
         session.setAttribute("loggedInAuditor", user);
 
+        // ✅ Redirect based on role
         if (user.getRole() == Role.ROLE_ADMIN) {
             return "redirect:/admin/dashboard";
         } else if (user.getRole() == Role.ROLE_AUDITOR) {
@@ -43,6 +51,5 @@ public class LoginController {
             redirectAttributes.addFlashAttribute("message", "Unknown role. Contact support.");
             return "redirect:/login";
         }
-
     }
 }

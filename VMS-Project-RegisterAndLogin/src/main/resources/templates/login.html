@@ -2,151 +2,260 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Login Employee</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <title>VMS Login | Secure Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Raleway:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Branding Colors */
+            --primary-color: #1abc9c; /* Bright Teal/Turquoise */
+            --secondary-color: #16a085; /* Darker Teal */
+            --background-dark: #0f2027;
+            --background-light: #2c5364;
+            --card-bg: rgba(44, 62, 80, 0.85); /* Semi-transparent background */
+            --text-color: #ecf0f1;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
         body {
             margin: 0;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: #fff;
+            background: linear-gradient(135deg, var(--background-dark), var(--background-light));
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden; /* Prevent scrollbar */
+        }
+
+        /* 🖼️ Optional: Background blobs for visual interest */
+        .blob {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            opacity: 0.15;
+            filter: blur(50px);
+            z-index: -1;
+            animation: moveBlob 15s infinite alternate;
+        }
+        .blob-1 { top: 10%; left: 10%; animation-duration: 12s; }
+        .blob-2 { bottom: 15%; right: 5%; background: var(--secondary-color); animation-duration: 18s; }
+        @keyframes moveBlob {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(50px, 80px) scale(1.1); }
         }
 
         .login-container {
-            background-color: #34495e;
+            /* Input fix ke liye max-width thoda badhaya */
+            max-width: 480px;
+
+            /* Glassmorphism/Neumorphism effect */
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 40px;
-            border-radius: 14px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            box-shadow:
+                0 4px 30px var(--shadow-color),
+                0 0 0 4px var(--primary-color); /* Subtle glow effect */
             width: 100%;
-            max-width: 400px;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
+            transform: scale(0.95);
+            animation: fadeIn 0.8s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { transform: scale(1); opacity: 1; }
         }
 
         .login-container h2 {
+            font-family: 'Raleway', sans-serif;
             text-align: center;
+            /* ❌ FIX 2: Extra large margin hata diya */
             margin-bottom: 30px;
-            font-weight: 600;
-            color: #1abc9c;
+
+            font-weight: 700;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             position: relative;
         }
 
         .form-group input {
-            width: 90%;
-            padding: 12px 20px;
-            border-radius: 8px;
-            background-color: #ecf0f1;
-            color: #2c3e50;
+            width: 100%;
+            /* ❌ FIX 1: Padding adjust kiya taki text andar fit ho */
+            padding: 15px 50px 15px 20px;
+
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333;
             font-size: 1em;
-            border: 2px solid transparent;
-            transition: border-color 0.3s ease;
+            border: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease, border 0.3s ease;
+            box-sizing: border-box; /* IMPORTANT: Ensures padding is inside width */
         }
 
         .form-group input:focus {
-            border-color: #1abc9c;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 10px rgba(26, 188, 156, 0.5);
             outline: none;
         }
 
         .form-group input::placeholder {
-            color: #95a5a6;
+            color: #888;
         }
 
         .toggle-password {
             position: absolute;
-            right: 15px;
-            top: 38px;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
             cursor: pointer;
-            font-size: 0.85em;
-            color: #1abc9c;
+            font-size: 1.2em;
+            color: var(--secondary-color);
             user-select: none;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Hide browser's default eye icon (code not changed, still necessary) */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear,
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-password-toggle-button {
+            display: none !important;
+            -webkit-appearance: none;
         }
 
         .login-btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             border: none;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #1abc9c, #16a085);
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
             color: white;
             font-size: 1.1em;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 10px;
-            box-shadow: 0 0 10px rgba(26, 188, 156, 0.4);
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3);
             transition: box-shadow 0.3s ease, transform 0.2s ease;
+            text-transform: uppercase;
         }
 
         .login-btn:hover {
-            box-shadow: 0 0 15px rgba(26, 188, 156, 0.6);
-            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(26, 188, 156, 0.5);
+            transform: translateY(-3px);
+        }
+
+        /* Message Styling */
+        .message, .error-message {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            animation: slideDown 0.5s ease-out;
+        }
+        .message {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+        }
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--error-color);
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .links {
             text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
+            margin-top: 25px;
+            font-size: 0.95em;
+            line-height: 1.8;
         }
 
         .links a {
-            color: #1abc9c;
+            color: var(--primary-color);
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
+            transition: color 0.2s ease;
         }
 
-        .message {
-            color: #2ecc71;
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .error-message {
-            color: #ff6b6b;
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: 500;
+        .links a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <h2>Login Employee</h2>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
 
-    <!-- Success or error message -->
+<div class="login-container">
+    <h2>VMS Employee Access</h2>
+
     <div th:if="${message}" th:text="${message}" class="message"></div>
     <div th:if="${error}" th:text="${error}" class="error-message"></div>
 
     <form th:action="@{/login}" method="post">
         <div class="form-group">
-            <input type="text" name="email" placeholder="Enter Email" required>
+            <input type="text" name="email" placeholder="Enter Email Address" required>
         </div>
         <div class="form-group">
-            <input type="password" name="password" id="password" placeholder="Enter Password" required>
-            <span class="toggle-password" onclick="toggleVisibility('password')">Show</span>
+            <input type="password" name="password" id="password" placeholder="Enter Secure Password" required>
+            <span class="toggle-password" onclick="toggleVisibility()">
+                👁️
+            </span>
         </div>
 
-        <button type="submit" class="login-btn">Login Employee</button>
+        <button type="submit" class="login-btn">Secure Login</button>
     </form>
 
     <div class="links">
-        <p><a th:href="@{/forgot-password}">Forgot Password?</a></p>
-        <p><a th:href="@{/vms/register}">Don't have an account? Register</a></p>
+        <p><a th:href="@{/forgot-password}">Forgot your password?</a></p>
+        <p>New Team Member? <a th:href="@{/vms/register}">**Register Here**</a></p>
     </div>
 </div>
 
 <script>
-    function toggleVisibility(fieldId) {
-        const field = document.getElementById(fieldId);
-        field.type = field.type === 'password' ? 'text' : 'password';
+    function toggleVisibility() {
+        const field = document.getElementById("password");
+        const icon = document.querySelector(".toggle-password");
+        if (field.type === "password") {
+            field.type = "text";
+            icon.textContent = "🙈";
+        } else {
+            field.type = "password";
+            icon.textContent = "👁️";
+        }
     }
+
+    // ❌ FIX 3: Auto-hide message code hata diya. Ab messages tab tak rahenge jab tak page refresh nahi hota.
+    // Purana code:
+    /*
+    setTimeout(() => {
+        const message = document.querySelector('.message');
+        const error = document.querySelector('.error-message');
+        // ... fade out logic ...
+    }, 4000);
+    */
 </script>
 
 </body>

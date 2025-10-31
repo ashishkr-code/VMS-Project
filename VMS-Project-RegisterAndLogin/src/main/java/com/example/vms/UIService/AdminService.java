@@ -4,6 +4,7 @@ import com.example.vms.Dto.CveRequest;
 import com.example.vms.Dto.ProductRequest;
 import com.example.vms.Enum.CveStatus;
 import com.example.vms.Enum.ProductStatus;
+import com.example.vms.Enum.Role;
 import com.example.vms.Enum.Severity;
 import com.example.vms.Model.Auditor;
 import com.example.vms.Model.CveModel;
@@ -176,4 +177,21 @@ public class AdminService {
                 ? admin.getCreated_at().toString()
                 : "Unknown";
     }
+
+
+    public void updateAuditor(Long id, String username, Long mobileno, Role role) {
+        Auditor auditor = auditorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+
+        // Update allowed fields
+        auditor.setUsername(username);
+        auditor.setMobileno(mobileno);
+        auditor.setRole(role);
+
+        // Optional: update timestamp
+        auditor.setUpdated_at(LocalDateTime.now());
+
+        auditorRepository.save(auditor);
+    }
+
 }
