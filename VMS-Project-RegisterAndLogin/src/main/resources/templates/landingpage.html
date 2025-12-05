@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-950 text-gray-100 font-[Poppins]">
+
+<!-- Navbar -->
+<header class="flex justify-between items-center px-8 py-5 border-b border-gray-800">
+    <h1 class="text-2xl font-bold text-blue-500">
+        Vulnerability<span class="text-white">Manager</span>
+    </h1>
+    <nav class="flex gap-6">
+        <a href="#features" class="hover:text-blue-400 transition">Features</a>
+        <a th:href="@{/login}" class="hover:text-blue-400 transition">Login</a>
+        <a th:href="@{/vms/register}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold transition">
+            Sign Up
+        </a>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section class="text-center py-20 px-6">
+    <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        Secure Your Systems with <span class="text-blue-500">Intelligent Vulnerability Management</span>
+    </h2>
+    <p class="text-gray-400 max-w-2xl mx-auto mb-10">
+        Detect, prioritize, and fix vulnerabilities before they become threats.
+        Our AI-powered system ensures complete visibility and control over your infrastructure.
+    </p>
+    <div class="flex justify-center gap-4">
+        <a th:href="@{/vms/register}" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-full font-semibold transition">
+            Get Started — Sign Up
+        </a>
+        <a th:href="@{/login}" class="border border-blue-500 text-blue-400 hover:bg-blue-600 hover:text-white px-6 py-3 rounded-full font-semibold transition">
+            Login
+        </a>
+    </div>
+</section>
+
+<!-- Features -->
+<section id="features" class="py-20 bg-gray-900 text-center">
+    <h3 class="text-3xl font-bold mb-12">Why Choose VulnerabilityManager?</h3>
+    <div class="grid md:grid-cols-3 gap-10 px-10">
+        <div class="p-6 bg-gray-800 rounded-2xl shadow-lg hover:shadow-blue-500/20 transition">
+            <h4 class="text-xl font-semibold mb-3 text-blue-400">Real-Time Detection</h4>
+            <p class="text-gray-400">
+                Instantly scan networks and applications for vulnerabilities using smart detection algorithms.
+            </p>
+        </div>
+        <div class="p-6 bg-gray-800 rounded-2xl shadow-lg hover:shadow-blue-500/20 transition">
+            <h4 class="text-xl font-semibold mb-3 text-blue-400">AI-Based Prioritization</h4>
+            <p class="text-gray-400">
+                Focus on what matters most with intelligent risk scoring and prioritization.
+            </p>
+        </div>
+        <div class="p-6 bg-gray-800 rounded-2xl shadow-lg hover:shadow-blue-500/20 transition">
+            <h4 class="text-xl font-semibold mb-3 text-blue-400">Detailed Reporting</h4>
+            <p class="text-gray-400">
+                Generate audit-ready reports and insights for compliance and security reviews.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-6 text-center border-t border-gray-800 text-gray-500 text-sm">
+    © 2025 Vulnerability Manager — All Rights Reserved
+</footer>
+
+</body>
+</html>
