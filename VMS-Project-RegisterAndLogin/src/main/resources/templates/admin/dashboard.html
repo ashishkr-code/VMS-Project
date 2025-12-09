@@ -702,31 +702,28 @@
     </div>
 </div>
 <!-- Profile Section -->
-<div class="container mt-5">
+<div id="profileSection" class="hidden container mt-5">
     <div class="card shadow-lg p-4 bg-white rounded-4" style="max-width: 600px; margin: auto;">
         <h3 class="text-center mb-4 text-primary">👤 Admin Profile</h3>
-
         <div class="mb-3">
             <strong>Name:</strong>
             <span th:text="${adminName}">Admin Name</span>
         </div>
-
         <div class="mb-3">
             <strong>Email:</strong>
             <span th:text="${adminEmail}">admin@example.com</span>
         </div>
-
         <div class="mb-3">
             <strong>Role:</strong>
             <span th:text="${adminRole}">ROLE_ADMIN</span>
         </div>
-
         <div class="mb-3">
             <strong>Created At:</strong>
             <span th:text="${adminCreatedAt}">2025-10-31</span>
         </div>
     </div>
 </div>
+
 
 
 

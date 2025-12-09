@@ -42,6 +42,10 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         verificationCode.setExpireDate(LocalDateTime.now().plusMinutes(10));
         verificationCodeRepository.save(verificationCode);
 
+        String baseUrl = System.getenv("APP_VERIFICATION_BASE_URL");
+        if (baseUrl == null) {
+            baseUrl = "http://localhost:8087/api/verify";
+        }
         // Verification link
         String verificationLink = "http://localhost:8087/api/verify?email=" + email + "&token=" + otp;
 

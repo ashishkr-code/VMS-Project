@@ -1,4 +1,4 @@
-package com.example.vms.Config;
+package com.example.vms.Configuration;
 
 import com.example.vms.Enum.Role;
 import org.springframework.core.convert.converter.Converter;
