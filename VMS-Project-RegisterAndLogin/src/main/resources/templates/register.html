@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Registration</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Raleway:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ---------------------------
+           Variables (Light default)
+           --------------------------- */
+        :root {
+            --bg-start: #f6f9fb;
+            --bg-end: #eef6f5;
+            --card-bg: rgba(255,255,255,0.95);
+            --card-border: rgba(44,62,80,0.06);
+            --accent: #1abc9c;
+            --accent-2: #16a085;
+            --muted: #6c7780;
+            --text: #213243;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --glass-shadow: 0 10px 30px rgba(33,50,67,0.08);
+            --input-bg: #ffffff;
+        }
+
+        /* Dark theme overrides */
+        body.dark {
+            --bg-start: #0f2027;
+            --bg-end: #203a43;
+            --card-bg: rgba(24,36,42,0.88);
+            --card-border: rgba(255,255,255,0.06);
+            --accent: #1abc9c;
+            --accent-2: #16a085;
+            --muted: #9fb3bb;
+            --text: #ecf0f1;
+            --glass-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            --input-bg: rgba(255,255,255,0.06);
+        }
+
+        /* Base layout */
+        html,body { height:100%; margin:0; font-family: 'Poppins', sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+        body {
+            background: linear-gradient(160deg, var(--bg-start), var(--bg-end));
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+            color:var(--text);
+            transition: background 0.45s ease, color 0.35s ease;
+        }
+
+        /* Container */
+        .registration-container {
+            width:100%;
+            max-width:760px;
+            border-radius:14px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--glass-shadow);
+            display:grid;
+            grid-template-columns: 1fr 420px;
+            overflow:hidden;
+            animation: slideUp 0.6s cubic-bezier(.2,.9,.2,1);
+        }
+
+        @keyframes slideUp { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+
+        /* Left info panel */
+        .info-panel {
+            padding:32px 36px;
+            background: linear-gradient(180deg, rgba(26,188,156,0.08), transparent);
+            display:flex;
+            flex-direction:column;
+            gap:18px;
+            align-items:flex-start;
+            justify-content:center;
+            min-height:420px;
+        }
+        .brand {
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+        .brand .logo {
+            width:54px;
+            height:54px;
+            border-radius:10px;
+            background: linear-gradient(135deg,var(--accent),var(--accent-2));
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:white;
+            font-weight:700;
+            font-family:'Raleway',sans-serif;
+            box-shadow:0 6px 18px rgba(26,188,156,0.18);
+        }
+        .brand h3 { margin:0; font-size:1.25rem; color:var(--text); }
+        .brand p { margin:0; color:var(--muted); font-size:0.95rem; }
+
+        .info-panel p.lead { margin-top:14px; color:var(--text); font-weight:600; line-height:1.4; }
+        .info-panel ul { margin:14px 0 0 18px; color:var(--muted); }
+        .info-panel ul li { margin:8px 0; font-size:0.95rem; }
+
+        /* Form column */
+        .form-panel {
+            padding:28px 30px;
+            min-height:420px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            gap:6px;
+        }
+
+        .form-panel h2 {
+            margin:0 0 8px 0;
+            font-family:'Raleway',sans-serif;
+            color:var(--accent);
+            font-size:1.6rem;
+        }
+        .form-sub { color:var(--muted); margin-bottom:12px; font-size:0.95rem; }
+
+        /* Form layout */
+        form { width:100%; }
+        .form-grid {
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap:12px;
+            margin-bottom:12px;
+        }
+        .form-row { margin-bottom:12px; position:relative; }
+
+        label { display:block; font-size:0.9rem; margin-bottom:6px; color:var(--text); font-weight:500; }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+            width:100%;
+            padding:12px 14px;
+            border-radius:8px;
+            border:1px solid rgba(0,0,0,0.06);
+            background:var(--input-bg);
+            color: var(--text);
+            font-size:0.95rem;
+            box-sizing:border-box;
+            transition: box-shadow .18s, border-color .18s, background .18s;
+        }
+        body.dark input { border-color: rgba(255,255,255,0.06); }
+        input:focus { outline:none; box-shadow:0 8px 18px rgba(26,188,156,0.12); border-color:var(--accent); }
+
+        /* Role pills */
+        .role-pills { display:flex; gap:8px; margin-bottom:12px; }
+        .pill {
+            padding:8px 12px;
+            border-radius:999px;
+            border:1px solid transparent;
+            cursor:pointer;
+            font-weight:600;
+            color:var(--muted);
+            background:transparent;
+            transition: all 0.18s;
+            user-select:none;
+        }
+        .pill.active {
+            background: linear-gradient(90deg,var(--accent),var(--accent-2));
+            color:white;
+            box-shadow:0 6px 18px rgba(26,188,156,0.14);
+        }
+
+        /* Admin fields (hidden by default) */
+        #adminSpecificFields { display:none; margin-bottom:12px; animation: fadeIn .28s; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
+
+        /* Password strength */
+        .strength-indicator { font-size:0.9rem; margin-top:6px; font-weight:600; color:var(--muted); }
+        .strength-meter { width:100%; height:8px; background:linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.03)); border-radius:6px; overflow:hidden; margin-top:8px; }
+        .strength-bar { height:100%; width:0%; transition: width .28s ease, background-color .18s ease; }
+
+        /* Toggle password button */
+        .toggle-password { position:absolute; right:10px; top:36px; background:transparent; border:none; cursor:pointer; color:var(--accent-2); font-weight:700; padding:6px; border-radius:6px; transition: transform .15s; }
+        .toggle-password:active { transform:scale(.98); }
+
+        /* Error messages */
+        .error-message { color:var(--danger); font-size:0.87rem; margin-top:6px; }
+        .global-error { color:var(--danger); text-align:center; margin-bottom:10px; font-weight:600; }
+
+        /* Submit */
+        .register-btn {
+            width:100%;
+            padding:12px 14px;
+            border-radius:10px;
+            border:none;
+            background: linear-gradient(90deg,var(--accent),var(--accent-2));
+            color:white;
+            font-weight:700;
+            font-size:1rem;
+            cursor:pointer;
+            box-shadow:0 10px 26px rgba(26,188,156,0.14);
+            transition: transform .18s, box-shadow .18s;
+        }
+        .register-btn:hover { transform: translateY(-3px); box-shadow:0 14px 34px rgba(26,188,156,0.18); }
+
+        .login-link { text-align:center; margin-top:12px; color:var(--muted); }
+        .login-link a { color:var(--accent); font-weight:600; text-decoration:none; }
+
+        /* Responsive */
+        @media (max-width:880px) {
+            .registration-container { grid-template-columns: 1fr; padding:14px; }
+            .info-panel { order:2; padding:18px; display:none; } /* hide left panel on small screens for simpler UX */
+            .form-panel { padding:18px; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="registration-container" role="region" aria-labelledby="registrationHeading">
+
+    <!-- LEFT: info / branding -->
+    <aside class="info-panel" aria-hidden="false">
+        <div class="brand" aria-hidden="false">
+            <div class="logo" aria-hidden="true">V</div>
+            <div>
+                <h3>VMS Portal</h3>
+                <p class="muted">Vulnerability Management System — Secure access</p>
+            </div>
+        </div>
+
+        <p class="lead">Register your account to access auditing and reporting tools. Choose a role — Admins require a company code.</p>
+
+        <ul>
+            <li>Secure login & role-based access</li>
+            <li>Real-time CVE review tools</li>
+            <li>Auditor & admin workflows</li>
+        </ul>
+    </aside>
+
+    <!-- RIGHT: form -->
+    <section class="form-panel" aria-labelledby="registrationHeading">
+        <h2 id="registrationHeading">Create an account</h2>
+        <div class="form-sub">Fast, secure and role-based registration</div>
+
+        <!-- server-side global error -->
+        <div th:if="${error}" th:text="${error}" class="global-error" role="alert" aria-live="assertive"></div>
+
+        <form th:action="@{/vms/register}" th:object="${RegisterRequest}" method="post" id="registerForm" novalidate>
+            <!-- Role selection as pills -->
+            <div class="form-row" role="group" aria-labelledby="roleLegend">
+                <div id="roleLegend" style="display:none">Select role</div>
+                <div class="role-pills" role="radiogroup" aria-label="Role selection">
+                    <button type="button" class="pill active" id="pillAuditor" data-value="AUDITOR" aria-pressed="true">Auditor</button>
+                    <button type="button" class="pill" id="pillAdmin" data-value="ADMIN" aria-pressed="false">Admin</button>
+                </div>
+
+                <!-- Hidden true radio inputs for server binding (Thymeleaf) -->
+                <input type="radio" id="roleAuditor" th:field="*{role}" value="AUDITOR" style="display:none" checked>
+                <input type="radio" id="roleAdmin" th:field="*{role}" value="ADMIN" style="display:none">
+                <div style="font-size:0.86rem; color:var(--muted); margin-top:6px;">Admins must provide a company code</div>
+            </div>
+
+            <!-- admin-specific fields -->
+            <div id="adminSpecificFields">
+                <div class="form-row">
+                    <label for="companyCode">Company Code</label>
+                    <input type="text" id="companyCode" th:field="*{companyCode}" placeholder="Provided by your organization" autocomplete="organization">
+                    <div id="companyHelp" class="error-message" th:if="${#fields.hasErrors('companyCode')}" th:errors="*{companyCode}"></div>
+                </div>
+            </div>
+
+            <!-- Names + contact -->
+            <div class="form-grid">
+                <div class="form-row">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" th:field="*{username}" placeholder="Choose a username" required minlength="3" maxlength="50" autocomplete="username">
+                    <div class="error-message" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                </div>
+
+                <div class="form-row">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" th:field="*{email}" placeholder="name@example.com" required autocomplete="email">
+                    <div class="error-message" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+            </div>
+
+            <!-- Mobile Number -->
+            <div class="form-row">
+                <label for="mobileno">Mobile Number</label>
+                <input type="tel"
+                       id="mobileno"
+                       th:field="*{mobileno}"
+                       placeholder="e.g. 9876543210"
+                       inputmode="numeric"
+                       pattern="\d{7,15}"
+                       maxlength="15"
+                       required
+                       autocomplete="tel">
+                <div class="error-message"
+                     th:if="${#fields.hasErrors('mobileno')}"
+                     th:errors="*{mobileno}"></div>
+
+                <div id="mobileHint"
+                     style="font-size:0.82em; color:var(--muted); margin-top:6px;">
+                    Include country code if applicable (no plus sign).
+                </div>
+            </div>
+
+
+            <!-- Password -->
+            <div class="form-row">
+                <label for="password">Password</label>
+                <input type="password" id="password" th:field="*{password}" placeholder="Minimum 8 chars, mixed case, number & symbol" oninput="checkStrength(this.value)" minlength="8" required autocomplete="new-password">
+                <button type="button" class="toggle-password" id="togglePassword" aria-controls="password" aria-pressed="false" onclick="toggleVisibility('password', this)">Show</button>
+
+                <div id="strengthIndicator" class="strength-indicator" aria-live="polite">Strength: —</div>
+                <div class="strength-meter" aria-hidden="true">
+                    <div id="strengthBar" class="strength-bar" style="width:0%; background:#7f8c8d"></div>
+                </div>
+
+                <div class="error-message" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+            </div>
+
+            <!-- Confirm -->
+            <div class="form-row">
+                <label for="confirmPassword">Confirm password</label>
+                <input type="password" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Re-enter password" minlength="8" required autocomplete="new-password">
+                <button type="button" class="toggle-password" id="toggleConfirm" aria-controls="confirmPassword" aria-pressed="false" onclick="toggleVisibility('confirmPassword', this)">Show</button>
+                <div id="confirmError" class="error-message" style="display:none;" aria-live="assertive">Passwords do not match.</div>
+                <div class="error-message" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+            </div>
+
+            <div class="form-row" style="margin-top:6px;">
+                <button type="submit" class="register-btn" id="registerBtn">Register</button>
+            </div>
+
+            <div class="login-link">Already have an account? <a th:href="@{/login}">Sign in</a></div>
+        </form>
+    </section>
+</div>
+
+<script>
+    /* ---------------------------
+       Theme: default -> light;
+       allow toggle and persist
+       --------------------------- */
+    (function () {
+        const saved = localStorage.getItem('vms_theme');
+        if (saved === 'dark') document.body.classList.add('dark');
+        else document.body.classList.remove('dark'); // default = light
+    })();
+
+    /* ---------------------------
+       Role pills behavior
+       - keep hidden radio inputs in sync (th:field)
+       --------------------------- */
+    const pillAuditor = document.getElementById('pillAuditor');
+    const pillAdmin = document.getElementById('pillAdmin');
+    const inputAuditor = document.getElementById('roleAuditor');
+    const inputAdmin = document.getElementById('roleAdmin');
+    const adminFields = document.getElementById('adminSpecificFields');
+
+    function setRole(role) {
+        if (role === 'ADMIN') {
+            pillAdmin.classList.add('active'); pillAdmin.setAttribute('aria-pressed','true');
+            pillAuditor.classList.remove('active'); pillAuditor.setAttribute('aria-pressed','false');
+            inputAdmin.checked = true;
+            inputAuditor.checked = false;
+            adminFields.style.display = 'block';
+        } else {
+            pillAuditor.classList.add('active'); pillAuditor.setAttribute('aria-pressed','true');
+            pillAdmin.classList.remove('active'); pillAdmin.setAttribute('aria-pressed','false');
+            inputAuditor.checked = true;
+            inputAdmin.checked = false;
+            adminFields.style.display = 'none';
+        }
+    }
+
+    pillAuditor.addEventListener('click', () => setRole('AUDITOR'));
+    pillAdmin.addEventListener('click', () => setRole('ADMIN'));
+
+    // initialize UI from radio (server could preselect)
+    document.addEventListener('DOMContentLoaded', () => {
+        const initial = inputAdmin.checked ? 'ADMIN' : 'AUDITOR';
+        setRole(initial);
+        // If password prefilled by browser, compute strength
+        const pw = document.getElementById('password');
+        if (pw && pw.value) checkStrength(pw.value);
+    });
+
+    /* ---------------------------
+        Toggle password visibility
+    --------------------------- */
+    function toggleVisibility(fieldId, btn) {
+        const field = document.getElementById(fieldId);
+        const isHidden = field.type === 'password';
+        field.type = isHidden ? 'text' : 'password';
+        if (btn) {
+            btn.textContent = isHidden ? 'Hide' : 'Show';
+            btn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+        }
+    }
+
+    /* ---------------------------
+       Password strength meter (client-side UX)
+       - returns score 0..5
+       --------------------------- */
+    function checkStrength(password) {
+        const indicator = document.getElementById('strengthIndicator');
+        const bar = document.getElementById('strengthBar');
+
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/\d/.test(password)) score++;
+        if (/[@$!%*?&^#()_\-+={}\[\]|;:'",.<>~`]/.test(password)) score++;
+
+        let label = 'Very weak', color = '#e74c3c', width = 12;
+        if (score === 1) { label = 'Very weak'; color = '#e74c3c'; width = 16; }
+        if (score === 2) { label = 'Weak'; color = '#e67e22'; width = 36; }
+        if (score === 3) { label = 'Medium'; color = '#f1c40f'; width = 60; }
+        if (score === 4) { label = 'Strong'; color = '#2ecc71'; width = 80; }
+        if (score === 5) { label = 'Very strong'; color = '#27ae60'; width = 100; }
+
+        indicator.textContent = `Strength: ${label}`;
+        indicator.style.color = color;
+        bar.style.background = color;
+        bar.style.width = width + '%';
+        return score;
+    }
+
+    /* ---------------------------
+       Client-side validation on submit
+       - ensures password match and phone format
+       --------------------------- */
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        const pw = document.getElementById('password').value || '';
+        const cpw = document.getElementById('confirmPassword').value || '';
+        const confirmError = document.getElementById('confirmError');
+
+        // reset messages
+        confirmError.style.display = 'none';
+
+        if (pw !== cpw) {
+            e.preventDefault();
+            confirmError.style.display = 'block';
+            confirmError.textContent = 'Passwords do not match.';
+            document.getElementById('confirmPassword').focus();
+            return false;
+        }
+
+        const mobile = document.getElementById('mobileno').value || '';
+        const mobilePattern = /^\d{7,15}$/;
+        if (mobile && !mobilePattern.test(mobile)) {
+            e.preventDefault();
+            const mobileHint = document.getElementById('mobileHint');
+            mobileHint.textContent = 'Enter a valid mobile number (7–15 digits).';
+            mobileHint.style.color = '#e74c3c';
+            document.getElementById('mobileno').focus();
+            return false;
+        }
+
+        // optional: require admin company code when admin selected
+        const adminChecked = document.getElementById('roleAdmin').checked;
+        if (adminChecked) {
+            const code = document.getElementById('companyCode').value || '';
+            if (!code.trim()) {
+                e.preventDefault();
+                const companyHelp = document.getElementById('companyHelp');
+                if (companyHelp) {
+                    companyHelp.textContent = 'Company code is required for admin accounts.';
+                    companyHelp.style.display = 'block';
+                } else {
+                    alert('Company code required for Admin.');
+                }
+                document.getElementById('companyCode').focus();
+                return false;
+            }
+        }
+
+        // allow server validation to handle remaining checks
+    });
+
+    /* ---------------------------
+       Expose a theme toggle function
+       (callable from outside if you add a button)
+       --------------------------- */
+    function setThemeDark(dark) {
+        if (dark) {
+            document.body.classList.add('dark');
+            localStorage.setItem('vms_theme', 'dark');
+        } else {
+            document.body.classList.remove('dark');
+            localStorage.setItem('vms_theme', 'light');
+        }
+    }
+
+    // Example: if you later want a UI toggle, call setThemeDark(true|false).
+</script>
+
+</body>
+</html>

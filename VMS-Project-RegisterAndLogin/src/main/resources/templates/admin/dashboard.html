@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - CVE Management</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- Bootstrap + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        /* ---------- Base ---------- */
+        :root {
+            --sidebar-width: 280px;
+            --overlay-bg: rgba(0,0,0,0.45);
+            --accent: #1abc9c;
+            --card-bg: #ffffff;
+            --glass: rgba(255,255,255,0.06);
+        }
+
+        body {
+            background: linear-gradient(180deg,#f7fafc 0%, #f4f6f8 100%);
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            transition: background 0.25s ease, color 0.25s ease;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        body.dark {
+            background: linear-gradient(180deg,#07101a 0%, #0f1720 100%);
+            color: #e6eef6;
+        }
+
+        header {
+            background: linear-gradient(90deg,#253547,#1e2b36);
+            color: white;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        header .brand { display:flex; align-items:center; gap:.8rem; }
+        header h2 { margin: 0; font-size: 1.05rem; font-weight:600; }
+
+        .hamburger {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.12);
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-dark {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            display:inline-flex;
+            align-items:center;
+            gap:.4rem;
+        }
+
+        /* ---------- Overlay Sidebar ---------- */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1080;
+            pointer-events: none;
+        }
+        .sidebar-backdrop {
+            position: absolute;
+            inset: 0;
+            background: transparent;
+            transition: background 0.25s ease;
+        }
+        .sidebar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            max-width: 92%;
+            background: #273444;
+            color: white;
+            transform: translateX(-110%);
+            transition: transform 0.28s cubic-bezier(.2,.9,.2,1);
+            box-shadow: 6px 0 30px rgba(2,6,23,0.35);
+            padding: 1rem;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar .close-btn { align-self:flex-end; background:transparent; border:0; color:white; font-size:1.2rem; }
+
+        .sidebar .nav-link { color: rgba(255,255,255,0.95); padding:.6rem .75rem; margin-bottom:.25rem; border-radius:8px; display:flex; align-items:center; gap:.6rem; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: var(--accent); color: #fff; }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(8,15,20,0.06);
+            padding: 1.25rem;
+            background: var(--card-bg);
+            margin-top: 1.2rem;
+        }
+        body.dark .card { background:#0b0e10; box-shadow: 0 6px 18px rgba(255,255,255,0.02); }
+
+        .btn-custom { background: var(--accent); color: #fff; border:none; }
+        .hidden { display:none !important; }
+
+        canvas { width:100% !important; max-height: 260px !important; }
+
+        .severity-badge { padding: 6px 12px; border-radius: 18px; font-size: 0.8rem; color: white; font-weight:600; display:inline-block; }
+        .severity-low { background: #27ae60; }
+        .severity-medium { background: #f39c12; }
+        .severity-high { background: #e67e22; }
+        .severity-critical { background: #e74c3c; }
+
+        .status-badge { padding: 6px 12px; border-radius: 18px; font-size: 0.8rem; color: white; font-weight:600; display:inline-block; }
+        .status-active { background: #27ae60; }
+        .status-inactive { background: #6c757d; }
+
+        /* loader overlay */
+        .global-loader { position: fixed; inset:0; z-index: 2000; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); opacity:0; pointer-events:none; transition:opacity .18s ease; }
+        .global-loader.show { opacity:1; pointer-events:auto; }
+        .loader-box { background: rgba(255,255,255,0.06); padding:1.6rem 2rem; border-radius:12px; display:flex; gap:1rem; align-items:center; color: #fff; box-shadow: 0 8px 30px rgba(2,6,23,0.5); }
+
+        /* search highlight */
+        mark.match { background: #ffef9b; color: #000; padding:0 .12rem; border-radius:3px; }
+
+        /* pagination */
+        .pagination-wrap { display:flex; align-items:center; gap:.5rem; justify-content:space-between; flex-wrap:wrap; margin-top:10px; }
+
+        @media (max-width: 576px) {
+            header { padding: .6rem; }
+            .card { padding:.9rem; }
+            canvas { max-height: 180px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Global loader -->
+<div id="globalLoader" class="global-loader" aria-hidden="true">
+    <div class="loader-box">
+        <div class="spinner-border text-light" role="status" style="width:2.25rem;height:2.25rem">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>
+            <div style="font-weight:700">Working...</div>
+            <div style="font-size:.85rem; opacity:.85">Please wait — fetching latest data</div>
+        </div>
+    </div>
+</div>
+
+<!-- Toasts -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:2050">
+    <div id="toastContainer" class="toast-container"></div>
+</div>
+
+<!-- Sidebar overlay root -->
+<div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true">
+    <div id="backdrop" class="sidebar-backdrop" tabindex="-1" aria-hidden="true"></div>
+
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Main sidebar">
+        <div class="brand-sm d-flex align-items-start justify-content-between mb-2">
+            <div>
+                <h4 class="mb-0">CVE Manager</h4>
+                <div class="small-muted text-white-50">Admin Dashboard</div>
+            </div>
+            <button class="close-btn" aria-label="Close sidebar" id="closeSidebarBtn">&times;</button>
+        </div>
+
+        <nav class="nav flex-column mt-3" role="menu">
+            <a role="menuitem" class="nav-link active" id="side-dashboard"
+               onclick="closeSidebar(); showSection('dashboard')">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a role="menuitem" class="nav-link" id="side-cves" onclick="closeSidebar(); showSection('cves')">
+                <i class="bi bi-shield-exclamation"></i> CVEs
+            </a>
+            <a role="menuitem" class="nav-link" id="side-products" onclick="closeSidebar(); showSection('products')">
+                <i class="bi bi-box-seam"></i> Products
+            </a>
+            <a role="menuitem" class="nav-link" id="side-users" onclick="closeSidebar(); showSection('users')">
+                <i class="bi bi-people"></i> Users
+            </a>
+            <a role="menuitem" class="nav-link" id="side-profile" onclick="closeSidebar(); showSection('profile')">
+                <i class="bi bi-person-circle"></i> Profile
+            </a>
+
+            <a role="menuitem" class="nav-link text-danger" th:href="@{/logout}">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </nav>
+
+        <div style="margin-top:auto; font-size:.9rem; color:rgba(255,255,255,0.75);">
+            <hr style="border-color: rgba(255,255,255,0.06);">
+            <div>Logged in as <strong>Admin</strong></div>
+            <small>VMS • v1</small>
+        </div>
+    </aside>
+</div>
+
+<!-- Header (hamburger + title + theme toggle) -->
+<header>
+    <div class="brand">
+        <button id="openSidebarBtn" class="hamburger" aria-label="Open menu" title="Menu" onclick="openSidebar()">
+            <svg width="18" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="20" height="2" rx="1" fill="white"/>
+                <rect y="6" width="20" height="2" rx="1" fill="white" opacity="0.9"/>
+                <rect y="12" width="20" height="2" rx="1" fill="white" opacity="0.7"/>
+            </svg>
+        </button>
+        <div>
+            <h2 class="mb-0">Admin Dashboard</h2>
+            <small style="color: rgba(255,255,255,0.85);">Vulnerability Management</small>
+        </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:.6rem;">
+        <button class="toggle-dark" onclick="toggleDarkMode()" aria-pressed="false" id="themeToggle">
+            <span id="themeIcon">🌙</span>
+        </button>
+    </div>
+</header>
+<main class="content">
+    <div class="container my-4">
+
+        <!-- DASHBOARD -->
+        <div id="dashboardSection">
+            <div class="card text-center">
+                <h5>System Overview</h5>
+                <div class="row mt-3">
+                    <div class="col-sm-4"><strong>Total CVEs:</strong> <span th:text="${totalCves}">0</span></div>
+                    <div class="col-sm-4"><strong>Active CVEs:</strong> <span th:text="${activeCves}">0</span></div>
+                    <div class="col-sm-4"><strong>Inactive CVEs:</strong> <span th:text="${patchedCves}">0</span></div>
+                </div>
+            </div>
+
+            <div class="row mt-3 g-3">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card text-center">
+                        <h6>Severity Distribution</h6>
+                        <canvas id="severityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card text-center">
+                        <h6>Status Distribution</h6>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <div class="card text-center">
+                        <h6>Product-wise CVE Count</h6>
+                        <canvas id="productChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3 g-3">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <h6>Monthly CVE Trend</h6>
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <h6>Severity vs Status (stacked)</h6>
+                        <canvas id="severityStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CVE SECTION -->
+        <div id="cveSection" class="hidden">
+            <div class="card">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="mb-0">Recent CVE Entries</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-secondary" id="exportCveBtn">Export CVEs CSV</button>
+                        <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addCveModal">+ Add New CVE</button>
+                    </div>
+                </div>
+
+                <!-- Search + Filter Bar -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4 col-sm-6">
+                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search by CVE, package, or description">
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <select id="filterSeverity" class="form-select">
+                            <option value="">All Severities</option>
+                            <option value="LOW">LOW</option>
+                            <option value="MEDIUM">MEDIUM</option>
+                            <option value="HIGH">HIGH</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <select id="filterStatus" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-sm-6 text-end">
+                        <button class="btn btn-secondary w-100" onclick="resetFilters()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="cveTable" class="table table-striped table-bordered align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>CVE ID</th>
+                            <th>Package</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Version</th>
+                            <th>Product ID</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="cveTableBody">
+                        <!-- Example Thymeleaf row (keeps original bindings) -->
+                        <tr th:each="cve : ${cveList}">
+                            <td th:text="${cve.cveId}">CVE-XXXX</td>
+                            <td th:text="${cve.packageName}">pkg</td>
+                            <td>
+                                <span th:class="'severity-badge severity-' + ${cve.severity.name().toLowerCase()}"
+                                      th:text="${cve.severity != null ? cve.severity.name() : 'N/A'}">
+                                </span>
+                            </td>
+                            <td>
+                                <span th:class="'status-badge status-' + ${cve.status.name().toLowerCase()}"
+                                      th:text="${cve.status != null ? cve.status.name() : 'N/A'}"></span>
+                            </td>
+                            <td th:text="${#temporals.format(cve.createdAt,'yyyy-MM-dd HH:mm')}">2025-10-27</td>
+                            <td th:text="${cve.version != null ? cve.version.versionstart + ' - ' + cve.version.versionend : 'N/A'}">1.0-2.0</td>
+                            <td th:text="${cve.product != null ? cve.product.productId : 'N/A'}">PRD-001</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm edit-cve-btn" data-bs-toggle="modal"
+                                        data-bs-target="#editCveModal"
+                                        th:data-id="${cve.id}" th:data-cve="${cve.cveId}" th:data-package="${cve.packageName}"
+                                        th:data-severity="${cve.severity}" th:data-status="${cve.status}">Edit
+                                </button>
+                                <a th:href="@{/admin/delete-cve/{id}(id=${cve.id})}" class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Delete this CVE?');">Delete</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination and rows per page -->
+                <div class="pagination-wrap mt-3">
+                    <div>
+                        <label>Rows per page:
+                            <select id="rowsPerPage" class="form-select d-inline-block" style="width:auto;">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="paginationControls" class="d-flex gap-2 align-items-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS SECTION - quick listing + export -->
+        <div id="productSection" class="hidden">
+            <div class="card mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="mb-0">📦 Product Management</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" id="exportProductsBtn">Export Products CSV</button>
+                        <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addProductModal">+ Add Product</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="productTable" class="table table-striped table-bordered align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Product ID</th>
+                            <th>Name</th>
+                            <th>Model No</th>
+                            <th>Publish Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p, i : ${productList}">
+                            <td th:text="${i.index + 1}">1</td>
+                            <td th:text="${p.productId}">PRD-001</td>
+                            <td th:text="${p.name}">Maven</td>
+                            <td th:text="${p.modelno}">A767F9A8</td>
+                            <td th:text="${#temporals.format(p.publishAt, 'yyyy-MM-dd')}">2025-10-14</td>
+                            <td th:switch="${p.status.name()}">
+                                <span th:case="'PUBLISH'" class="badge bg-success">PUBLISH</span>
+                                <span th:case="'UNPUBLISH'" class="badge bg-danger">UNPUBLISH</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-warning btn-sm product-edit-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editProductModal"
+                                        th:data-id="${p.id}" th:data-name="${p.name}" th:data-status="${p.status.name()}"
+                                        title="Edit Product">✏️
+                                </button>
+                                <a th:href="@{'/admin/delete-product/' + ${p.id}}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Are you sure you want to delete this product?');"
+                                   title="Delete Product">🗑</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- USERS SECTION -->
+        <div id="usersSection" class="hidden">
+            <div class="card mt-4 p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="mb-0">👥 User Management</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Role</th>
+                            <th>Verified</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="user, i : ${userList}">
+                            <td th:text="${i.index + 1}">1</td>
+                            <td th:text="${user.username}">John</td>
+                            <td th:text="${user.email}">john@example.com</td>
+                            <td th:text="${user.mobileno}">9999999999</td>
+                            <td th:text="${user.role}">ADMIN</td>
+                            <td><span th:text="${user.verfied ? '✅' : '❌'}"></span></td>
+                            <td th:text="${user.created_at}">2025-10-22</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#editUserModal__' + ${user.id}">
+                                    ✏️ Edit
+                                </button>
+                                <a th:href="@{'/admin/delete-user/' + ${user.id}}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Are you sure you want to delete this user?');">
+                                    🗑 Delete
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div id="profileSection" class="hidden container mt-5">
+            <div class="card shadow-lg p-4 bg-white rounded-4" style="max-width: 600px; margin: auto;">
+                <h3 class="text-center mb-4 text-primary">👤 Admin Profile</h3>
+                <div class="mb-3">
+                    <strong>Name:</strong>
+                    <span th:text="${adminName}">Admin Name</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Email:</strong>
+                    <span th:text="${adminEmail}">admin@example.com</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Role:</strong>
+                    <span th:text="${adminRole}">ROLE_ADMIN</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Created At:</strong>
+                    <span th:text="${adminCreatedAt}">2025-10-31</span>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- container -->
+</main>
+<!-- ADD CVE Modal -->
+<div class="modal fade" id="addCveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="@{/admin/save-cve}" th:object="${newCve}" method="post" onsubmit="showLoader();">
+                <div class="modal-header"><h5 class="modal-title">Add New CVE</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6"><label>Package Name</label><input type="text" class="form-control" th:field="*{packageName}" required></div>
+                    <div class="col-md-6"><label>Severity</label>
+                        <select class="form-select" th:field="*{severity}" required>
+                            <option value="">Select</option>
+                            <option value="LOW">LOW</option>
+                            <option value="MEDIUM">MEDIUM</option>
+                            <option value="HIGH">HIGH</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                    </div>
+                    <div class="col-12"><label>Description</label><textarea class="form-control" th:field="*{description}" rows="3" required></textarea></div>
+                    <div class="col-md-6"><label>Status</label>
+                        <select class="form-select" th:field="*{status}" required>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3"><label>Version Start</label><input type="text" class="form-control" th:field="*{version.versionstart}" placeholder="1.0.0" required></div>
+                    <div class="col-md-3"><label>Version End</label><input type="text" class="form-control" th:field="*{version.versionend}" placeholder="2.0.0" required></div>
+                    <div class="col-md-6"><label>Product ID</label><input type="text" class="form-control" th:field="*{productId}" placeholder="PRD-001" required></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save CVE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT CVE Modal (single shared) -->
+<div class="modal fade" id="editCveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/admin/update-cve}" method="post" onsubmit="showLoader();">
+                <div class="modal-header"><h5 class="modal-title">Edit CVE</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-id" name="id">
+                    <div class="mb-3"><label>Package Name</label><input type="text" class="form-control" id="edit-package" name="packageName" required></div>
+                    <div class="mb-3"><label>Severity</label>
+                        <select class="form-select" id="edit-severity" name="severity" required>
+                            <option value="LOW">LOW</option>
+                            <option value="MEDIUM">MEDIUM</option>
+                            <option value="HIGH">HIGH</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label>Status</label>
+                        <select class="form-select" id="edit-status" name="status" required>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Update CVE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD PRODUCT Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form th:action="@{/admin/save-product}" method="post" class="modal-content" onsubmit="showLoader();">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Product Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Enter product name" required>
+                </div>
+                <div class="mb-3">
+                    <label>Status</label>
+                    <select name="status" class="form-select">
+                        <option value="UNPUBLISH">UNPUBLISH</option>
+                        <option value="PUBLISH">PUBLISH</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT PRODUCT Modal (single shared) -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form th:action="@{/admin/update-product}" method="post" class="modal-content" onsubmit="showLoader();">
+            <input type="hidden" name="id" id="product-edit-id">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Product Name</label>
+                    <input type="text" name="name" id="product-edit-name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Status</label>
+                    <select name="status" id="product-edit-status" class="form-select">
+                        <option value="PUBLISH">PUBLISH</option>
+                        <option value="UNPUBLISH">UNPUBLISH</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="submit">Update</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT USER modals kept as-is (per-user) -->
+<div th:each="user : ${userList}">
+    <div class="modal fade" th:id="'editUserModal__' + ${user.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/update-user}" method="post" class="modal-content" onsubmit="showLoader();">
+                <input type="hidden" name="id" th:value="${user.id}">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Username</label>
+                        <input type="text" name="username" class="form-control" th:value="${user.username}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Mobile No</label>
+                        <input type="text" name="mobileno" class="form-control" th:value="${user.mobileno}">
+                    </div>
+                    <div class="mb-3">
+                        <label>Role</label>
+                        <select name="role" class="form-select">
+                            <option th:selected="${user.role=='ROLE_ADMIN'}" value="ROLE_ADMIN">Admin</option>
+                            <option th:selected="${user.role=='ROLE_USER'}" value="ROLE_USER">User</option>
+                            <option th:selected="${user.role=='ROLE_AUDITOR'}" value="ROLE_AUDITOR">Auditor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Scripts: Behavior, Charts, Pagination, Export, Toasts -->
+<script>
+    /* ---------- Sidebar open/close logic ---------- */
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebarEl = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    const openBtn = document.getElementById('openSidebarBtn');
+    const closeBtn = document.getElementById('closeSidebarBtn');
+
+    function openSidebar() {
+        sidebarOverlay.classList.add('open');
+        sidebarEl.classList.add('open');
+        sidebarOverlay.setAttribute('aria-hidden', 'false');
+        backdrop.style.background = 'var(--overlay-bg)';
+        if (window.innerWidth < 992) document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        sidebarOverlay.classList.remove('open');
+        sidebarEl.classList.remove('open');
+        sidebarOverlay.setAttribute('aria-hidden', 'true');
+        backdrop.style.background = 'transparent';
+        document.body.style.overflow = '';
+    }
+
+    openBtn && openBtn.addEventListener('click', openSidebar);
+    closeBtn && closeBtn.addEventListener('click', closeSidebar);
+    backdrop && backdrop.addEventListener('click', closeSidebar);
+
+    // close on ESC
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape' && sidebarEl.classList.contains('open')) closeSidebar();
+    });
+
+    /* ---------- Dark mode ---------- */
+    function toggleDarkMode(){
+        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.contains('dark');
+        document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('vms_theme', isDark ? 'dark' : 'light');
+    }
+    (function(){
+        if(localStorage.getItem('vms_theme')==='dark') {
+            document.body.classList.add('dark');
+            document.getElementById('themeIcon').textContent='☀️';
+        }
+    })();
+
+    /* ---------- Section switching (fixed mapping) ---------- */
+    function showSection(section) {
+        const sections = {
+            dashboard: document.getElementById('dashboardSection'),
+            cves: document.getElementById('cveSection'),
+            products: document.getElementById('productSection'),
+            users: document.getElementById('usersSection'),
+            profile: document.getElementById('profileSection')
+        };
+        const tabs = {
+            dashboard: document.getElementById('side-dashboard'),
+            cves: document.getElementById('side-cves'),
+            products: document.getElementById('side-products'),
+            users: document.getElementById('side-users'),
+            profile: document.getElementById('side-profile')
+        };
+        Object.values(sections).forEach(s => s && s.classList.add('hidden'));
+        Object.values(tabs).forEach(t => t && t.classList.remove('active'));
+        if (sections[section]) sections[section].classList.remove('hidden');
+        if (tabs[section]) tabs[section].classList.add('active');
+        if (window.innerWidth < 992) closeSidebar();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ---------- Global loader ---------- */
+    const globalLoader = document.getElementById('globalLoader');
+    function showLoader(){ globalLoader.classList.add('show'); }
+    function hideLoader(){ globalLoader.classList.remove('show'); }
+
+    /* ---------- Toast helpers ---------- */
+    const toastContainer = document.getElementById('toastContainer');
+    function showToast(title, message, type = 'success', timeout = 4000) {
+        const toastEl = document.createElement('div');
+        toastEl.className = 'toast align-items-center text-white bg-' + (type === 'error' ? 'danger' : 'success') + ' border-0';
+        toastEl.setAttribute('role','alert');
+        toastEl.setAttribute('aria-live','assertive');
+        toastEl.setAttribute('aria-atomic','true');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${escapeHtml(title)}:</strong> ${escapeHtml(message)}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>`;
+        toastContainer.appendChild(toastEl);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: timeout });
+        bsToast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    /* ---------- Charts (use Thymeleaf JSON if available, else fallback) ---------- */
+    document.addEventListener('DOMContentLoaded', function(){
+        try {
+            var severityCounts = /*[[${severityCountsJson}]]*/ [4,8,6,2];
+            var statusCounts = /*[[${statusCountsJson}]]*/ [10,5];
+            var productLabels = /*[[${productLabelsJson}]]*/ ["PRD-001","PRD-002","PRD-003"];
+            var productCounts = /*[[${productCountsJson}]]*/ [7,3,5];
+            var monthlyLabels = /*[[${monthlyLabelsJson}]]*/ ["Jan","Feb","Mar","Apr","May","Jun","Jul"];
+            var monthlyCounts = /*[[${monthlyCountsJson}]]*/ [2,3,6,4,5,7,8];
+            var severityStatusDatasets = /*[[${severityStatusDatasetsJson}]]*/ [
+                { label: 'ACTIVE', data: [3,6,5,2], backgroundColor: '#e74c3c' },
+                { label: 'INACTIVE', data: [1,2,1,0], backgroundColor: '#27ae60' }
+            ];
+            var severityLabels = ['LOW','MEDIUM','HIGH','CRITICAL'];
+
+            // Severity doughnut
+            var ctxSeverity = document.getElementById('severityChart');
+            if(ctxSeverity){
+                new Chart(ctxSeverity, {
+                    type: 'doughnut',
+                    data: {
+                        labels: severityLabels,
+                        datasets: [{ data: severityCounts, backgroundColor: ['#27ae60','#f39c12','#e67e22','#e74c3c'], borderColor:'#fff', borderWidth:2 }]
+                    },
+                    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} } }
+                });
+            }
+
+            // Status pie
+            var ctxStatus = document.getElementById('statusChart');
+            if(ctxStatus){
+                new Chart(ctxStatus, {
+                    type: 'pie',
+                    data: { labels:['ACTIVE','INACTIVE'], datasets:[{ data: statusCounts, backgroundColor:['#27ae60','#6c757d'], borderColor:'#fff', borderWidth:2 }]},
+                    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} } }
+                });
+            }
+
+            // Product bar
+            var ctxProduct = document.getElementById('productChart');
+            if(ctxProduct){
+                new Chart(ctxProduct, {
+                    type: 'bar',
+                    data: { labels: productLabels, datasets:[{ label:'CVEs', data:productCounts, backgroundColor: ['#1abc9c','#3498db','#9b59b6'] }]},
+                    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+                });
+            }
+
+            // Monthly trend
+            var ctxMonthly = document.getElementById('monthlyTrendChart');
+            if(ctxMonthly){
+                new Chart(ctxMonthly, {
+                    type: 'line',
+                    data: { labels: monthlyLabels, datasets:[{ label:'New CVEs', data:monthlyCounts, fill:true, tension:0.3, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.12)', pointRadius:3 }]},
+                    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} } }
+                });
+            }
+
+            // Severity vs Status stacked
+            var ctxSS = document.getElementById('severityStatusChart');
+            if(ctxSS){
+                new Chart(ctxSS, {
+                    type: 'bar',
+                    data: { labels: severityLabels, datasets: severityStatusDatasets },
+                    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} }, scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } } }
+                });
+            }
+        } catch (err) {
+            console.warn('Chart init error', err);
+        }
+    });
+
+    /* ---------- Search + Filter + Highlighting ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchInput');
+      const filterSeverity = document.getElementById('filterSeverity');
+      const filterStatus = document.getElementById('filterStatus');
+      const rows = () => document.querySelectorAll('#cveTableBody tr');
+
+      function highlightText(el, query) {
+        if(!query) { // remove marks
+            el.querySelectorAll('mark.match').forEach(m => {
+                m.replaceWith(document.createTextNode(m.textContent));
+            });
+            return;
+        }
+        // simple highlight across text nodes in the row
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()){
+            const text = node.nodeValue;
+            if(!text.trim()) continue;
+            const idx = text.toLowerCase().indexOf(query.toLowerCase());
+            if(idx !== -1 && node.parentElement.tagName !== 'MARK') {
+                const highlighted = document.createElement('mark');
+                highlighted.className = 'match';
+                const before = text.slice(0, idx);
+                const match = text.slice(idx, idx + query.length);
+                const after = text.slice(idx + query.length);
+                const frag = document.createDocumentFragment();
+                if(before) frag.appendChild(document.createTextNode(before));
+                const mark = document.createElement('mark'); mark.className='match'; mark.textContent = match;
+                frag.appendChild(mark);
+                if(after) frag.appendChild(document.createTextNode(after));
+                node.parentNode.replaceChild(frag, node);
+            }
+        }
+      }
+
+      function applyFilters() {
+        const query = searchInput.value.trim();
+        const severity = filterSeverity.value;
+        const status = filterStatus.value;
+
+        rows().forEach(row => {
+          const text = row.innerText.toLowerCase();
+          const sevText = row.querySelector('td:nth-child(3)')?.innerText.trim() || '';
+          const statText = row.querySelector('td:nth-child(4)')?.innerText.trim() || '';
+          const matchSearch = !query || text.includes(query.toLowerCase());
+          const matchSeverity = !severity || sevText === severity;
+          const matchStatus = !status || statText === status;
+          row.style.display = (matchSearch && matchSeverity && matchStatus) ? '' : 'none';
+
+          // highlight in visible rows
+          // remove previous marks first
+          row.querySelectorAll('mark.match').forEach(m => m.replaceWith(document.createTextNode(m.textContent)));
+          if(matchSearch && query) highlightText(row, query);
+        });
+
+        // reset pagination when filters change
+        initPagination();
+      }
+
+      [searchInput, filterSeverity, filterStatus].forEach(el => el.addEventListener('input', applyFilters));
+
+      window.resetFilters = function() {
+        searchInput.value = '';
+        filterSeverity.value = '';
+        filterStatus.value = '';
+        applyFilters();
+      };
+    });
+
+    /* ---------- Client-side pagination for CVE table ---------- */
+    let currentPage = 1;
+    function initPagination() {
+        const rowsPerPageSel = document.getElementById('rowsPerPage');
+        const rowsPerPage = parseInt(rowsPerPageSel.value, 10) || 10;
+        const tbody = document.getElementById('cveTableBody');
+        const allRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
+        const total = allRows.length;
+        const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+        if(currentPage > totalPages) currentPage = totalPages;
+
+        // hide all rows then show slice
+        tbody.querySelectorAll('tr').forEach(r => r.classList.add('d-none'));
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        allRows.slice(start, end).forEach(r => r.classList.remove('d-none'));
+
+        // render controls
+        const controls = document.getElementById('paginationControls');
+        controls.innerHTML = '';
+        const info = document.createElement('div'); info.className='text-muted'; info.style.marginRight='8px';
+        info.textContent = `Showing ${Math.min(total, start+1)} - ${Math.min(total, end)} of ${total}`;
+        controls.appendChild(info);
+
+        const prev = document.createElement('button'); prev.className='btn btn-sm btn-outline-primary'; prev.textContent='Prev';
+        prev.disabled = currentPage === 1; prev.onclick = () => { currentPage--; initPagination(); window.scrollTo({top: document.getElementById('cveTable').offsetTop - 80, behavior:'smooth'}); };
+        const next = document.createElement('button'); next.className='btn btn-sm btn-outline-primary'; next.textContent='Next';
+        next.disabled = currentPage === totalPages; next.onclick = () => { currentPage++; initPagination(); window.scrollTo({top: document.getElementById('cveTable').offsetTop - 80, behavior:'smooth'}); };
+
+        controls.appendChild(prev);
+
+        // page buttons (limited)
+        const pagesWrap = document.createElement('div'); pagesWrap.className='d-inline-flex gap-1 align-items-center';
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons/2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        if (endPage - startPage + 1 < maxButtons) startPage = Math.max(1, endPage - maxButtons + 1);
+        for(let i = startPage; i <= endPage; i++){
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm ' + (i===currentPage ? 'btn-primary' : 'btn-outline-secondary');
+            btn.textContent = i;
+            btn.onclick = (function(p){ return function(){ currentPage = p; initPagination(); } })(i);
+            pagesWrap.appendChild(btn);
+        }
+        controls.appendChild(pagesWrap);
+
+        controls.appendChild(next);
+
+        // when rowsPerPage changes, reset to page 1
+        rowsPerPageSel.onchange = function(){ currentPage = 1; initPagination(); };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // init pagination after content loads
+        setTimeout(initPagination, 120);
+    });
+
+    /* ---------- CSV Export helpers ---------- */
+    function csvFromTable(tableId, filename) {
+        const table = document.getElementById(tableId);
+        const rows = Array.from(table.querySelectorAll('thead tr, tbody tr')).filter(r => r.style.display !== 'none' && !r.classList.contains('d-none'));
+        const csv = rows.map(row => {
+            const cols = Array.from(row.querySelectorAll('th, td')).map(td => '"' + (td.innerText.replace(/"/g, '""').trim()) + '"');
+            return cols.join(',');
+        }).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    document.getElementById('exportCveBtn')?.addEventListener('click', function(){
+        csvFromTable('cveTable', 'cves_export.csv');
+        showToast('Export', 'CVEs exported as CSV', 'success');
+    });
+    document.getElementById('exportProductsBtn')?.addEventListener('click', function(){
+        csvFromTable('productTable', 'products_export.csv');
+        showToast('Export', 'Products exported as CSV', 'success');
+    });
+
+    /* ---------- Autofill Edit Modals ---------- */
+    const editModalEl = document.getElementById('editCveModal');
+    if(editModalEl){
+        editModalEl.addEventListener('show.bs.modal', function(e){
+            const btn = e.relatedTarget;
+            if(!btn) return;
+            document.getElementById('edit-id').value = btn.getAttribute('data-id') || '';
+            document.getElementById('edit-package').value = btn.getAttribute('data-package') || '';
+            document.getElementById('edit-severity').value = btn.getAttribute('data-severity') || 'LOW';
+            document.getElementById('edit-status').value = btn.getAttribute('data-status') || 'ACTIVE';
+        });
+    }
+
+    // product edit modal (shared)
+    const editProductModal = document.getElementById('editProductModal');
+    if(editProductModal){
+        editProductModal.addEventListener('show.bs.modal', function(e){
+            const btn = e.relatedTarget;
+            if(!btn) return;
+            document.getElementById('product-edit-id').value = btn.getAttribute('data-id') || '';
+            document.getElementById('product-edit-name').value = btn.getAttribute('data-name') || '';
+            document.getElementById('product-edit-status').value = btn.getAttribute('data-status') || 'PUBLISH';
+        });
+    }
+
+    /* ---------- small UX: hide loader after form submit completes (server side should redirect) ---------- */
+    window.addEventListener('pageshow', () => hideLoader());
+</script>
+
+</body>
+</html>
