@@ -103,7 +103,6 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         Auditor auditor = verificationCode.getAuditor();
         auditor.setVerfied(true);
         auditorRepository.save(auditor);
-
         return "🎉 Email verified successfully for: " + auditor.getEmail();
     }
 }
